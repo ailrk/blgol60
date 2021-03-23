@@ -1,0 +1,14 @@
+begin
+comment variable declarations must be before procedures definitions!;
+	boolean b;
+
+	procedure outBoolean(x); boolean x;
+	begin
+		if x then outstring(1, "true ") else outstring(1, "false ")
+	end;
+
+	b := false;
+	outBoolean(b);
+	b := true;
+	outBoolean(b)
+end

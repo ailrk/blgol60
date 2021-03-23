@@ -1,0 +1,9 @@
+begin
+comment stop execution by CTRL+C;
+	integer n;
+	n := 1;
+	startlabel:;
+	  outinteger (1,n);
+	  n := n+1;
+	goto startlabel
+end

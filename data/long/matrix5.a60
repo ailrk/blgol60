@@ -1,0 +1,56 @@
+begin
+comment matrix and vector multiplication;
+	real array aa[1:100,1:100];
+	real array bb[1:100];
+	real array cc[1:100];
+	integer n, i, j;
+	
+	procedure outVector( channel, v, ndim);
+	real array v; integer channel, ndim;
+	begin
+		integer i;
+		outinteger (channel, ndim);
+		for i := 1 step 1 until ndim do outreal (channel, v[i]);
+		outstring(channel, "\n")
+	end;
+	
+	procedure outmatrix(channel, a, dim);
+	integer channel; real array a; integer dim;
+	begin
+		integer i, j;
+		outinteger (channel, dim); outstring(channel,"\n");
+		for i := 1 step 1 until dim do
+		begin
+			for j := 1 step 1 until dim do outreal (channel, a[i,j]);
+			outstring(channel,"\n")
+		end		
+	end ;
+	
+	procedure matrmultvector(a, b, c, dim);
+	real array a; real array b; real array c; integer dim;
+	begin
+		integer i, j;
+		for i := 1 step 1 until dim do
+		begin
+			c[i] :=0;
+			for j := 1 step 1 until dim do c[i] := c[i] + a[i,j]*b[j]
+		end		
+	end ;
+	
+	comment matrix generation;
+	n := 4;
+	for i := 1 step 1 until n do
+	begin
+		bb[i] := i;
+		for j := 1 step 1 until n do 
+		begin
+			aa[i,j] := entier ( 100000 /i/j) / 100000
+		end
+	end ;
+	
+	outmatrix(1, aa, n);
+	outVector(1, bb, n);
+	matrmultvector(aa, bb, cc, n);
+	outVector(1, cc, n)
+		
+end

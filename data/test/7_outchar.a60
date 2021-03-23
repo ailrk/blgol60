@@ -1,0 +1,7 @@
+begin
+	integer n;
+	n := 3;
+	outchar(1,"abcd1234",n);
+	n := 6;
+	outchar(1,"abcd1234",n)
+end

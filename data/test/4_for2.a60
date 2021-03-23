@@ -1,0 +1,4 @@
+begin
+	real r;
+	for r := 0 step 0.2 until 5 do outreal (1,r)
+end

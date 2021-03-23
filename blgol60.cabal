@@ -1,0 +1,108 @@
+cabal-version:          3.0
+name:                   blgol60
+version:                0.1.0.0
+license:                MIT
+license-file:           LICENSE
+author:                 Ailrk
+maintainer:             jimmy123good@gmail.com
+category:               Language
+extra-source-files:     CHANGELOG.md
+data-files:             data/test/*.a60
+                        data/test/*.a60.expect
+
+common extensions
+    default-extensions: LambdaCase
+                        ImportQualifiedPost
+                        OverloadedStrings
+                        OverloadedRecordDot
+                        DerivingStrategies
+                        DuplicateRecordFields
+                        NoFieldSelectors
+                        QuasiQuotes
+                        StandaloneDeriving
+                        BlockArguments
+
+common deps
+    build-depends:      base >=4.15.0.0
+                      , parsec
+                      , bytestring
+                      , text
+                      , transformers
+                      , mtl
+                      , hashable
+                      , containers
+                      , unordered-containers
+                      , pretty-simple
+                      , string-interpolate
+                      , unliftio
+                      , generic-lens
+                      , lens
+                      , relude
+
+common relude-mixins
+    mixins:             base hiding (Prelude)
+                      , relude (Relude as Prelude)
+                      , relude
+
+common options
+    ghc-options:
+                        -- force all warnings to be on and selectively disable some
+                        -Weverything
+                        -Wno-unticked-promoted-constructors
+                        -Wno-unsafe
+                        -Wno-missing-import-lists
+                        -Wno-implicit-prelude
+                        -Wno-missing-safe-haskell-mode
+                        -Wno-missing-deriving-strategies
+                        -Wno-missing-local-signatures
+                        -Wno-monomorphism-restriction
+                        -Wno-safe
+                        -Wno-all-missed-specialisations
+                        -Wno-missing-kind-signatures
+                        -Wno-ambiguous-fields
+                        -Wno-missing-export-lists
+
+library
+    import:              extensions
+                       , deps
+                       , relude-mixins
+                       , options
+
+    exposed-modules:     AST
+                         Env
+                         Error
+                         Frame
+                         Lexer
+                         Parser
+                         Position
+                         Semantic
+                         Symbol
+                         Temp
+                         Tree
+                         Translate
+                         Type
+    other-modules:       Paths_blgol60
+
+    hs-source-dirs:      src
+    default-language:    GHC2021
+
+executable blgol60
+    import:              deps, extensions, options
+    main-is:             Main.hs
+    hs-source-dirs:      app
+    default-language:    GHC2021
+
+test-suite test
+    default-language:    GHC2021
+    type:                exitcode-stdio-1.0
+    hs-source-dirs:      test
+    main-is:             Main.hs
+    ghc-options:         -threaded
+    other-modules:       Paths_test
+    build-depends:       base >=4.15.0.0
+                       , blgol60
+                       , parsec
+                       , hspec
+                       , pretty-simple
+                       , unliftio
+                       , text

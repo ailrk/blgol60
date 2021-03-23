@@ -1,0 +1,6 @@
+begin
+  comment writing to file  FILE_2;
+	integer n;
+	n := 54321;
+	outinteger(2,n)
+end

@@ -1,0 +1,7 @@
+begin
+	integer array nArr[1:5];
+	nArr[1] := 1;
+	nArr[5] := 5;
+	outinteger(1, nArr[5]);
+	outinteger(1, nArr[3])
+end

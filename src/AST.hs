@@ -19,16 +19,29 @@ data Operator
   | GtOp
   | GeOp
 
+instance Show Operator where
+  show = undefined
+
 newtype ArgList = ArgList [Expr]
+
 newtype FieldList = FieldList [(Symbol, Expr, Position)]
+
 newtype Type = Type Symbol
+
 newtype Test = Test Expr
+
 newtype Body = Body Expr
+
 newtype Then = Then Expr
+
 newtype Else = Else Expr
+
 newtype Low = Low Expr
+
 newtype High = High Expr
+
 newtype Size = Size Expr
+
 newtype Init = Init Expr
 
 data Expr where
@@ -54,3 +67,14 @@ data Var where
   SubscriptVar :: Var -> Expr -> Position -> Var
 
 data Dec
+
+data Ty
+
+data Field
+
+data TypeDec
+
+data FuncDec
+
+instance Show Expr where
+  show = undefined

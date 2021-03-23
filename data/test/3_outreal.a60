@@ -1,0 +1,5 @@
+begin
+	real x;
+	x := 1.23;
+	outreal(1,x)
+end

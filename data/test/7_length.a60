@@ -1,0 +1,6 @@
+begin
+	integer len;
+	len := maxint ;
+	len := length ("abcd1234");
+	outinteger (1,len)
+end

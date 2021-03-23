@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "./app"
+      component: "exe:blgol60"
+
+    - path: "./src"
+      component: "lib:blgol60"
+
+    - path: "./test"
+      component: "test:test"

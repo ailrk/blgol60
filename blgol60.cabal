@@ -1,0 +1,135 @@
+cabal-version:      3.0
+name:               blgol60
+version:            0.1.0.0
+synopsis:
+
+-- A longer description of the package.
+-- description:
+homepage:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+license:            MIT
+license-file:       LICENSE
+author:             Ailrk
+maintainer:         jimmy123good@gmail.com
+
+-- A copyright notice.
+-- copyright:
+category:           Language
+extra-source-files: CHANGELOG.md
+data-files:         data/test/*.a60
+      
+
+
+library
+    exposed-modules:
+      AST
+      Env
+      Error
+      Frame
+      Lexer
+      Parser
+      Position
+      Semantic
+      Symbol
+      Temp
+      Tree
+      Translate
+      Type
+
+    other-modules:
+
+    default-extensions:
+      LambdaCase
+      ImportQualifiedPost
+      OverloadedStrings
+      OverloadedRecordDot
+      DerivingStrategies
+      DuplicateRecordFields
+      NoFieldSelectors
+      QuasiQuotes
+      StandaloneDeriving
+
+    ghc-options:
+      -- force all warnings to be on and selectively disable some
+      -Weverything
+      -Wno-unticked-promoted-constructors
+      -Wno-unsafe
+      -Wno-missing-import-lists
+      -Wno-implicit-prelude
+      -Wno-missing-safe-haskell-mode
+      -Wno-missing-deriving-strategies
+      -Wno-missing-local-signatures
+      -Wno-monomorphism-restriction
+      -Wno-safe
+      -Wno-all-missed-specialisations
+      -Wno-missing-kind-signatures
+      -Wno-ambiguous-fields
+      -Wno-missing-export-lists
+
+    hs-source-dirs:  src
+    default-language: GHC2021
+    build-depends: base >=4.15.0.0
+                 , parsec
+                 , bytestring
+                 , text
+                 , transformers
+                 , mtl
+                 , hashable
+                 , containers
+                 , unordered-containers
+                 , pretty-simple
+                 , string-interpolate
+                 , unliftio
+
+
+executable blgol60
+    main-is:          Main.hs
+
+    ghc-options:
+      -Weverything
+      -Wno-unticked-promoted-constructors
+      -Wno-unsafe
+      -Wno-missing-import-lists
+      -Wno-implicit-prelude
+      -Wno-missing-safe-haskell-mode
+      -Wno-missing-deriving-strategies
+      -Wno-missing-local-signatures
+      -Wno-monomorphism-restriction
+      -Wno-safe
+      -Wno-all-missed-specialisations
+      -Wno-missing-kind-signatures
+      -Wno-ambiguous-fields
+      -Wno-missing-export-lists
+
+    default-extensions:
+      LambdaCase
+      ImportQualifiedPost
+      OverloadedStrings
+      OverloadedRecordDot
+      DuplicateRecordFields
+      NoFieldSelectors
+      QuasiQuotes
+      StandaloneDeriving
+
+    build-depends: base >=4.15.0.0
+
+    hs-source-dirs:   app
+    default-language: GHC2021
+
+
+test-suite test
+      default-language      : GHC2021
+      type                  : exitcode-stdio-1.0
+      hs-source-dirs        : test
+      main-is               : Main.hs
+      ghc-options           : -threaded
+      other-modules         : Paths_test      
+      build-depends         : base >=4.15.0.0
+                            , blgol60
+                            , parsec
+                            , hspec
+                            , pretty-simple
+                            , unliftio
+                            , text

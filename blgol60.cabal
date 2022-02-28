@@ -45,7 +45,7 @@ library
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.14.1.0,
+        base ^>=4.16.0.0,
         parsec,
         vector,
         bytestring,
@@ -69,7 +69,7 @@ executable blgol60
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.14.1.0,
+        base ^>=4.16.0.0,
         blgol60,
 
     hs-source-dirs:   app
@@ -81,5 +81,5 @@ test-suite blgol60-test
     hs-source-dirs:   test
     main-is:          MyLibTest.hs
     build-depends:
-        base ^>=4.14.1.0
+        base ^>=4.16.0.0
       , blgol60

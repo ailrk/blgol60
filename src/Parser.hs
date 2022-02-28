@@ -25,7 +25,8 @@ import qualified AST                   as A
 import           Control.Applicative   ((<|>))
 import           Control.Monad.State
 import           Data.Functor.Identity
-import           Data.Text             as T
+import qualified Data.Text             as T
+import           Data.Text             (Text)
 import           Lexer
 import           Position
 import           Symbol                as S

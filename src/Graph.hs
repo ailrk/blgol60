@@ -18,7 +18,6 @@
 
 module Graph where
 
-import           Data.Vector
 import           Map         as Map
 
 newtype Node = Node Int

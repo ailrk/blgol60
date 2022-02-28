@@ -47,7 +47,6 @@ library
     build-depends:
         base ^>=4.16.0.0,
         parsec,
-        vector,
         bytestring,
         text,
         transformers,
@@ -69,8 +68,8 @@ executable blgol60
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base ^>=4.16.0.0,
-        blgol60,
+        base ^>=4.16.0.0
+      , blgol60
 
     hs-source-dirs:   app
     default-language: Haskell2010

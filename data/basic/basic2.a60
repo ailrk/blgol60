@@ -1,0 +1,19 @@
+begin
+  comment test #2 function;
+
+  integer i;
+
+  integer procedure factorial (n);
+  value n; integer n;
+    factorial := if n < 1 then 1 else n * factorial (n - 1);
+
+  outstring(1, "test #2 >>>\n");
+
+  for i := 1 step 1 until 10 do
+  begin
+    outinteger(1, i);
+    space(1);
+    outinteger(1, factorial(i));
+    newline(1);
+  end
+end;

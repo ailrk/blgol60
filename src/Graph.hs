@@ -16,5 +16,39 @@
 -- TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 -- OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-{-# LANGUAGE GADTs #-}
-module Translate where
+module Graph where
+
+import           Data.Vector
+import           Map         as Map
+
+newtype Node = Node Int
+  deriving (Eq, Ord, Show)
+
+data Graph = Graph
+  { graphNodes    :: Int
+  , graphAdjacent :: Map.Map (Int, Int) Bool
+  }
+
+newGraph :: Graph
+newGraph = Graph { graphNodes = 0, graphAdjacent = Map.empty }
+
+newNode :: Graph -> (Node, Graph)
+newNode g = let n = graphNodes g in (Node n, g { graphNodes = n + 1 })
+
+makeEdge :: Graph -> Node -> Node -> Graph
+makeEdge = undefined
+
+removeEdge :: Graph -> Node -> Node -> Graph
+removeEdge = undefined
+
+nodes :: Graph -> [Node]
+nodes = undefined
+
+succNode :: Graph -> Node -> [Node]
+succNode = undefined
+
+predNode :: Graph -> Node -> [Node]
+predNode = undefined
+
+adjacentNodes :: Graph -> Node -> [Node]
+adjacentNodes = undefined

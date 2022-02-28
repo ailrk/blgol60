@@ -1,0 +1,5 @@
+begin
+	integer n;
+	ininteger ( 0, n ); comment reading from channel 0;
+	outinteger ( 1, n); comment  writing to channel 1;
+end

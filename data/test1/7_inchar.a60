@@ -1,0 +1,5 @@
+begin
+	integer n;
+	inchar(0,"abcd1234",n);
+	outinteger(1,n)
+end

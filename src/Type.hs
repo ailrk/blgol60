@@ -17,4 +17,21 @@
 -- OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 {-# LANGUAGE GADTs #-}
-module Translate where
+
+module Type where
+
+
+import Data.IORef
+
+import qualified           Symbol
+
+newtype Unique = IORef ()
+
+data Type where
+  Int :: Type
+  String :: Type
+  Record :: [(Symbol.Symbol, Type)] -> Unique -> Type
+  Array :: Type -> Unique -> Type
+  Nil :: Type
+  Unit :: Type
+  Name :: Symbol.Symbol -> Type -> IORef (Maybe Type) -> Type

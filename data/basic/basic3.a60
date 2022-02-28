@@ -1,0 +1,19 @@
+begin
+  comment test #3 nested procedure;
+
+  integer h;
+
+  procedure foo;
+  begin
+    integer i, j;
+    procedure inc;
+    begin
+      i := i + 1;
+      j := j + 1;
+    end;
+    i := j := h := 0;
+    for j := 1 step 1 until 100 do inc;
+  end;
+
+  foo;
+end;

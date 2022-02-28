@@ -1,80 +1,234 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds             #-}
+-- doge-algol60
+-- Copyright © 2021 ailrk
+-- Permission is hereby granted, free of charge, to any person obtaining
+-- a copy of this software and associated documentation files (the "Software"),
+-- to deal in the Software without restriction, including without limitation
+-- the rights to use, copy, modify, merge, publish, distribute, sublicense,
+-- and/or sell copies of the Software, and to permit persons to whom the
+-- Software is furnished to do so, subject to the following conditions:
+-- The above copyright notice and this permission notice shall be included
+-- in all copies or substantial portions of the Software.
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+-- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+-- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+-- IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+-- DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+-- TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+-- OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 module AST where
 
-import qualified Data.Text as T
-import Position
-import Symbol
+import           Data.Kind
+import           Data.List.NonEmpty (NonEmpty)
+import qualified Data.Text          as T
+import qualified GHC.TypeLits       as TL
+import           Position
+import           Symbol
 
-data Operator
-  = PlustOp
-  | MinusOp
-  | TimesOp
-  | DivideOp
-  | EqOp
-  | NeqOp
-  | LtOp
-  | LeOp
-  | GtOp
-  | GeOp
+-------------------------------------------------------------------------------
+-- Variable
+-------------------------------------------------------------------------------
 
-instance Show Operator where
-  show = undefined
+data Var
 
-newtype ArgList = ArgList [Expr]
+  -- identifier
+  = SimpleVar
+    { name     :: Symbol
+    , position :: Position
+    }
 
-newtype FieldList = FieldList [(Symbol, Expr, Position)]
+  -- a[integer]
+  | SubscriptVar
+    { subVar    :: Var
+    , subscript :: [Expr]
+    , position  :: Position
+    }
 
-newtype Type = Type Symbol
+  deriving Show
 
-newtype Test = Test Expr
+-------------------------------------------------------------------------------
+-- Expressions
+-------------------------------------------------------------------------------
 
-newtype Body = Body Expr
+-- Algo60 only have Int, real, and string three primitive types.
+data Expr
+  = NilExpr
 
-newtype Then = Then Expr
+  | VarExpr Var Position
 
-newtype Else = Else Expr
+  -- scalaras
+  | IntExpr Integer Position
+  | RealExpr Double Position
+  | StringExpr T.Text Position
 
-newtype Low = Low Expr
+  -- different from val, label is just a symbol.
+  | LabelExpr Symbol Position
+  | SwitchExpr Symbol Expr Position
 
-newtype High = High Expr
+  | CallExpr
+    { callName :: Symbol
+    , callArgs :: [Expr]
+    , position :: Position
+    }
 
-newtype Size = Size Expr
+  -- note there is both if expr and if statement
+  | IfExpr
+    { test     :: Expr
+    , thenExpr :: Expr
+    , elseExpr :: Expr
+    , position :: Position
+    }
 
-newtype Init = Init Expr
+  | BinopExpr BinaryOp Position Expr Expr
 
-data Expr where
-  NilExpr :: Expr
-  IntExpr :: Int -> Expr
-  StringExpr :: T.Text -> Position -> Expr
-  CallExpr :: Symbol -> ArgList -> Position -> Expr
-  OpExpr :: Expr -> Operator -> Expr -> Position -> Expr
-  RecordExpr :: FieldList -> Type -> Position -> Expr
-  SeqExpr :: FieldList -> Expr
-  AssignExpr :: Var -> Expr -> Position -> Expr
-  IfExpr :: Test -> Then -> Else -> Position -> Expr
-  WhileExpr :: Test -> Body -> Position -> Expr
-  ForExpr :: Symbol -> Maybe Bool -> Low -> High -> Body -> Position -> Expr
-  BreakExpr :: Symbol -> Expr
-  LetExpr :: [Dec] -> Body -> Position -> Expr
-  ArrayExpr :: Type -> Size -> Init -> Position -> Position -> Expr
-  VarExpr :: Var -> Expr
+  | UnopExpr UnaryOp Position Expr
 
-data Var where
-  SimpleVar :: Symbol -> Position -> Var
-  FieldVar :: Var -> Symbol -> Position -> Var
-  SubscriptVar :: Var -> Expr -> Position -> Var
+  deriving Show
 
+-------------------------------------------------------------------------------
+-- Statements
+-------------------------------------------------------------------------------
+data Stmt
+  = NilStmt
+
+  | BlockStmt
+      { decs     :: [Dec]
+      , body     :: Stmt
+      , position :: Position
+      }
+
+  | ArrayStmt
+      { typ           :: Symbol
+      , size          :: Expr
+      , init          :: Expr
+      , positionBegin :: Position
+      , positionEnd   :: Position
+      }
+
+  | VarStmt Var
+
+  -- imperative basics
+  | SeqStmt { fields :: [(Symbol, Expr, Position)] }
+
+  | AssignStmt Var Expr Position
+
+  -- control flow
+  | IfStmt
+    { test     :: Expr
+    , thenStmt :: Stmt
+    , elseStmt :: Stmt
+    , position :: Position
+    }
+
+  | ForStmt
+    { name      :: Symbol
+    , forHeader :: ForStmtHeader
+    , flag      :: Bool
+    , body      :: Stmt
+    , position  :: Position
+    }
+
+  -- goto label
+  | GoToStmt Symbol
+
+  deriving Show
+
+
+-- for has three versions: use it as block;  step-until; while
+data ForStmtHeader
+  = While
+    { initAssigns :: [Expr]
+    , test :: Expr
+    }
+  | Step
+    { initAssigns :: [Expr]
+    , step :: Expr
+    , until :: Expr
+    }
+  | Immediate
+  deriving Show
+
+-------------------------------------------------------------------------------
+-- Declarations
+-------------------------------------------------------------------------------
 data Dec
+  = ProcedureDec [FuncDec]
 
+  | VarDec
+    { name :: Symbol
+    , escape :: Bool
+    , typs :: Maybe (Symbol, Position)
+    , init :: Expr
+    , position :: Position
+    }
+
+  | TypeDec
+    { name :: Symbol
+    , typ :: Ty
+    , position :: Position
+    }
+  deriving Show
+
+-- type annotations
 data Ty
+  -- e.g integer a;
+  = NameTy Symbol Position
 
+  -- e.g integer array a[10];
+  | ArrayTy Symbol Position
+  deriving Show
+
+-- OPerators
+data BinaryOp = PlustOp | MinusOp | TimesOp | DivideOp
+              | EqOp | NeqOp | LtOp | LeOp | GtOp | GeOp
+              | AndOp | OrOp | XorOp
+  deriving (Eq, Show)
+
+data UnaryOp = NotOp deriving (Eq, Show)
+
+-- helps
 data Field
-
-data TypeDec
+  = Field
+    { name :: Symbol
+    , escape :: Bool
+    , typ :: Symbol
+    , position :: Position }
+  deriving Show
 
 data FuncDec
+  = FuncDec
+    { name :: Symbol
+    , parameters :: [(Field, EvalStrat)]
+    , result :: Maybe (Symbol, Position)
+    , body :: Expr
+    , position :: Position
+    }
+  deriving Show
 
-instance Show Expr where
-  show = undefined
+data EvalStrat = CBV | CBN deriving Show
+
+-------------------------------------------------------------------------------
+-- enums
+-------------------------------------------------------------------------------
+toBinaryOp :: T.Text -> BinaryOp
+toBinaryOp "+"   = PlustOp
+toBinaryOp "-"   = MinusOp
+toBinaryOp "*"   = TimesOp
+toBinaryOp "/"   = DivideOp
+toBinaryOp "="   = EqOp
+toBinaryOp "/="  = NeqOp
+toBinaryOp "<"   = LtOp
+toBinaryOp "<="  = LeOp
+toBinaryOp ">"   = GtOp
+toBinaryOp ">="  = GeOp
+toBinaryOp "and" = AndOp
+toBinaryOp "or"  = OrOp
+toBinaryOp "xor" = XorOp
+
+toUnaryOp :: T.Text -> UnaryOp
+toUnaryOp "not" = NotOp

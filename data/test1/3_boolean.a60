@@ -1,0 +1,6 @@
+begin
+	comment no such library procedure outboolean(1,b);
+	boolean b;
+	b := true ;
+	if b then outstring (1,"true") else outstring (1,"false")
+end

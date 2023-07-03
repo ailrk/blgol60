@@ -1,0 +1,262 @@
+( BlockStmt
+    [ ArrayDec False
+        ( Just
+            ( ScalarT
+                ( Symbol
+                    { text = "integer"
+                    , hash = -3981469178763205206
+                    }
+                )
+            )
+        )
+        [ ArraySegment
+            { name =
+                [ Symbol
+                    { text = "nArr"
+                    , hash = 5538139345919032770
+                    }
+                ]
+            , boundPairs =
+                [
+                    ( IntExpr 1
+                        ( Position
+                            { file = "test parser"
+                            , col = 29
+                            , line = 2
+                            }
+                        )
+                    , IntExpr 5
+                        ( Position
+                            { file = "test parser"
+                            , col = 31
+                            , line = 2
+                            }
+                        )
+                    )
+                ]
+            }
+        ]
+        ( Position
+            { file = "test parser"
+            , col = 32
+            , line = 2
+            }
+        )
+    ]
+    ( SeqStmt
+        ( AssignStmt
+            [ SubscriptVar
+                ( SimpleVar
+                    ( Symbol
+                        { text = "nArr"
+                        , hash = 5538139345919032770
+                        }
+                    )
+                    ( Position
+                        { file = "test parser"
+                        , col = 13
+                        , line = 3
+                        }
+                    )
+                )
+                [ IntExpr 1
+                    ( Position
+                        { file = "test parser"
+                        , col = 15
+                        , line = 3
+                        }
+                    )
+                ]
+                ( Position
+                    { file = "test parser"
+                    , col = 13
+                    , line = 3
+                    }
+                )
+            ]
+            ( IntExpr 1
+                ( Position
+                    { file = "test parser"
+                    , col = 21
+                    , line = 3
+                    }
+                )
+            )
+            ( Position
+                { file = "test parser"
+                , col = 21
+                , line = 3
+                }
+            )
+        )
+        ( SeqStmt
+            ( AssignStmt
+                [ SubscriptVar
+                    ( SimpleVar
+                        ( Symbol
+                            { text = "nArr"
+                            , hash = 5538139345919032770
+                            }
+                        )
+                        ( Position
+                            { file = "test parser"
+                            , col = 13
+                            , line = 4
+                            }
+                        )
+                    )
+                    [ IntExpr 5
+                        ( Position
+                            { file = "test parser"
+                            , col = 15
+                            , line = 4
+                            }
+                        )
+                    ]
+                    ( Position
+                        { file = "test parser"
+                        , col = 13
+                        , line = 4
+                        }
+                    )
+                ]
+                ( IntExpr 5
+                    ( Position
+                        { file = "test parser"
+                        , col = 21
+                        , line = 4
+                        }
+                    )
+                )
+                ( Position
+                    { file = "test parser"
+                    , col = 21
+                    , line = 4
+                    }
+                )
+            )
+            ( SeqStmt
+                ( CallStmt
+                    ( Symbol
+                        { text = "outinteger"
+                        , hash = -361074373873143019
+                        }
+                    )
+                    [ IntExpr 1
+                        ( Position
+                            { file = "test parser"
+                            , col = 21
+                            , line = 5
+                            }
+                        )
+                    , VarExpr
+                        ( SubscriptVar
+                            ( SimpleVar
+                                ( Symbol
+                                    { text = "nArr"
+                                    , hash = 5538139345919032770
+                                    }
+                                )
+                                ( Position
+                                    { file = "test parser"
+                                    , col = 27
+                                    , line = 5
+                                    }
+                                )
+                            )
+                            [ IntExpr 5
+                                ( Position
+                                    { file = "test parser"
+                                    , col = 29
+                                    , line = 5
+                                    }
+                                )
+                            ]
+                            ( Position
+                                { file = "test parser"
+                                , col = 27
+                                , line = 5
+                                }
+                            )
+                        )
+                        ( Position
+                            { file = "test parser"
+                            , col = 30
+                            , line = 5
+                            }
+                        )
+                    ]
+                    ( Position
+                        { file = "test parser"
+                        , col = 31
+                        , line = 5
+                        }
+                    )
+                )
+                ( CallStmt
+                    ( Symbol
+                        { text = "outinteger"
+                        , hash = -361074373873143019
+                        }
+                    )
+                    [ IntExpr 1
+                        ( Position
+                            { file = "test parser"
+                            , col = 21
+                            , line = 6
+                            }
+                        )
+                    , VarExpr
+                        ( SubscriptVar
+                            ( SimpleVar
+                                ( Symbol
+                                    { text = "nArr"
+                                    , hash = 5538139345919032770
+                                    }
+                                )
+                                ( Position
+                                    { file = "test parser"
+                                    , col = 27
+                                    , line = 6
+                                    }
+                                )
+                            )
+                            [ IntExpr 3
+                                ( Position
+                                    { file = "test parser"
+                                    , col = 29
+                                    , line = 6
+                                    }
+                                )
+                            ]
+                            ( Position
+                                { file = "test parser"
+                                , col = 27
+                                , line = 6
+                                }
+                            )
+                        )
+                        ( Position
+                            { file = "test parser"
+                            , col = 30
+                            , line = 6
+                            }
+                        )
+                    ]
+                    ( Position
+                        { file = "test parser"
+                        , col = 1
+                        , line = 7
+                        }
+                    )
+                )
+            )
+        )
+    )
+    ( Position
+        { file = "test parser"
+        , col = 1
+        , line = 8
+        }
+    )
+)

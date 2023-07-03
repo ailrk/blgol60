@@ -1,0 +1,51 @@
+begin
+comment matrix2x2 and 3x3 determinants;
+	real array aa[1:2,1:2];
+	real array bb[1:3,1:3];
+	integer i, j;
+	
+	procedure outmatrix(channel, a, dim);
+	integer channel; real array a; integer dim;
+	begin
+		integer i, j;
+		outinteger (channel, dim); outstring(channel,"\n");
+		for i := 1 step 1 until dim do
+		begin
+			for j := 1 step 1 until dim do outreal (channel, a[i,j]);
+			outstring(channel,"\n")
+		end		
+	end ;
+	
+	real procedure matr2determ(a);	real array a;
+	begin
+		matr2determ := a[1,1]*a[2,2] - a[1,2]*a[2,1]
+	end ;
+	
+	real procedure matr3determ(a);	real array a;
+	begin
+		matr3determ := a[1,1]*a[2,2]*a[3,3] + a[1,2]*a[2,3]*a[3,1] + a[1,3]*a[2,1]*a[3,2] 
+		             - a[1,3]*a[2,2]*a[3,1] - a[1,2]*a[2,1]*a[3,3] - a[1,1]*a[2,3]*a[3,2] 
+	end ;
+	
+	comment matrix generation;
+	for i := 1 step 1 until 2 do
+	begin
+		for j := 1 step 1 until 2 do 
+		begin
+			aa[i,j] := i + j
+		end
+	end ;
+	for i := 1 step 1 until 3 do
+	begin
+		for j := 1 step 1 until 3 do 
+		begin
+			bb[i,j] := i + j
+		end
+	end ;
+	
+	outmatrix(1, aa, 2);
+	outstring(1,"determinant="); outreal(1,matr2determ(aa));outstring(1,"\n");
+	outmatrix(1, bb, 3);
+	outstring(1,"determinant="); outreal(1,matr3determ(bb));outstring(1,"\n")
+		
+end

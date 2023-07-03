@@ -43,17 +43,5 @@
           ];
           inputFrom = builtins.attrValues self.packages.${system};
         };
-
-        apps = {
-          blgol60 = {
-            type = "app";
-            program = "${self.packages.${system}.${packageName}}/bin/blgol60";
-          };
-
-          cabal = {
-            type = "app";
-            program = "${haskellPackages.cabal-install}/bin/cabal";
-          };
-        };
       });
 }

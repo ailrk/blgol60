@@ -1,4 +1,4 @@
 begin
 	integer n, i;
 	for i:=1 step 1 until 10 do outinteger (1,i)
-
+end

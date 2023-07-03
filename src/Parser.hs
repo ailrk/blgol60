@@ -5,6 +5,8 @@ module Parser where
 
 import AST
   ( ArraySegment (..)
+  , BlockStmt (..)
+  , CallStmt (..)
   , Dec (..)
   , EvalStrat (..)
   , Expr
@@ -20,6 +22,8 @@ import AST
     , VarExpr
     )
   , ForListElement (..)
+  , ForStmt (..)
+  , IfStmt (..)
   , Parameter (..)
   , Procedure (..)
   , Stmt (..)
@@ -41,7 +45,7 @@ import Lexer qualified
 import Position (getPosFromParsec)
 import Symbol (Symbol)
 import Symbol qualified
-import Text.Parsec (ParsecT, anyChar, between, choice, label, many, many1, manyTill, satisfy, sepBy, sepBy1, sepEndBy, try, (<?>))
+import Text.Parsec (ParsecT, anyChar, between, choice, label, many, many1, satisfy, sepBy, sepBy1, sepEndBy, try, (<?>))
 import Text.Parsec.Expr
   ( Assoc (AssocLeft)
   , Operator (Infix, Prefix)
@@ -91,10 +95,12 @@ unlabelledBlock = flip label "unlabelled block" $ do
     _ -> pure ()
   statement <- compoundTail
   BlockStmt
-    decs
-    statement
-    <$> getPosFromParsec
-    <?> "unlabelled block"
+    . BlockStmt_
+      decs
+      statement
+    <$> ( getPosFromParsec
+            <?> "unlabelled block"
+        )
 
 
 blockHead :: MonadIO m => ParsecT Text u m [Dec]
@@ -131,34 +137,32 @@ unlabelledCompound = flip label "unlabelled compound" $ do
 
 
 comment :: MonadIO m => ParsecT Text u m ()
-comment = try . void . optional $ do
-  Lexer.reserved "comment"
-  manyTill anyChar (try (Lexer.symbol ";"))
+comment = void . optional $ between (Lexer.reserved "comment") (Lexer.reserved ";") (many anyChar)
 
 
 stmt :: MonadIO m => ParsecT Text u m Stmt
 stmt =
-  try unconditionalStmt
+  try forStmt
     <|> try conditionalStmt
-    <|> forStmt
-      <* comment
+    <|> unconditionalStmt
+    <?> "statement"
 
 
 -- conditional
 unconditionalStmt :: MonadIO m => ParsecT Text u m Stmt
-unconditionalStmt = try basicStmt <|> try compoundStmt <|> block
+unconditionalStmt = try basicStmt <|> try compoundStmt <|> block <?> "unconditional stmt"
 
 
 conditionalStmt :: MonadIO m => ParsecT Text u m Stmt
 conditionalStmt = do
   ifStmt >>= \case
-    IfStmt b t NilStmt pos ->
+    IfStmt (IfStmt_ b t NilStmt pos) ->
       do
         try (Lexer.reserved "else" *> stmt)
         <|> try
           ( do
               elseStatement <- stmt
-              pure (IfStmt b t elseStatement pos)
+              pure (IfStmt (IfStmt_ b t elseStatement pos))
           )
         <|> labelStmt conditionalStmt
     _ -> fail "invalid conditional"
@@ -169,16 +173,16 @@ basicStmt = try unlabelledBasicStmt <|> labelStmt basicStmt
 
 
 unlabelledBasicStmt :: MonadIO m => ParsecT Text u m Stmt
-unlabelledBasicStmt = try assignmentStmt <|> try gotoStmt <|> try procedureStmt <|> dummyStmt
+unlabelledBasicStmt = try assignmentStmt <|> try gotoStmt <|> try procedureStmt <|> dummyStmt <?> "unlablled basic statement"
 
 
 ifStmt :: MonadIO m => ParsecT Text u m Stmt
-ifStmt = IfStmt <$> ifClauseExpression <*> unconditionalStmt <*> dummyStmt <*> getPosFromParsec <?> "if statment"
+ifStmt = IfStmt <$> (IfStmt_ <$> ifClauseExpression <*> unconditionalStmt <*> dummyStmt <*> getPosFromParsec <?> "if statment")
 
 
 -- loop
 forStmt :: MonadIO m => ParsecT Text u m Stmt
-forStmt = try unlabelledBasicStmt <|> labelStmt unlabelledForClause
+forStmt = try unlabelledForClause <|> labelStmt unlabelledForClause <?> "for"
 
 
 unlabelledForClause :: MonadIO m => ParsecT Text u m Stmt
@@ -190,11 +194,13 @@ unlabelledForClause = do
   Lexer.reserved "do"
   body <- stmt
   ForStmt
-    var
-    forListEles
-    body
-    <$> getPosFromParsec
-    <?> "for"
+    <$> ( ForStmt_
+            var
+            forListEles
+            body
+            <$> getPosFromParsec
+            <?> "for"
+        )
 
 
 forList :: MonadIO m => ParsecT Text u m [ForListElement]
@@ -255,10 +261,12 @@ dummyStmt = pure NilStmt
 procedureStmt :: MonadIO m => ParsecT Text u m Stmt
 procedureStmt =
   CallStmt
-    <$> identifier
-    <*> actualParameterPart
-    <*> getPosFromParsec
-    <?> "function desginator"
+    <$> ( CallStmt_
+            <$> identifier
+            <*> actualParameterPart
+            <*> getPosFromParsec
+            <?> "function desginator"
+        )
 
 
 -------------------------------------------------------------------------------
@@ -321,8 +329,8 @@ arithmeticExpression = simpleArithmeticExpression
   arithFactor :: MonadIO m => ParsecT Text u m Expr
   arithFactor =
     between (Lexer.symbol "(") (Lexer.symbol ")") arithmeticExpression
-      <|> try int
       <|> try real
+      <|> try int
       <|> try functionDesignator
       <|> varExpression
       <?> "simple expression"
@@ -484,8 +492,6 @@ localOrOwnType =
     Just () -> pure True
     Nothing -> pure False
 
-
--- own real array a1, a2, a3 [1:10],
 
 arrayDeclaration :: MonadIO m => ParsecT Text u m Dec
 arrayDeclaration =

@@ -25,7 +25,7 @@ data Var
       -- ^ subscript
       Position
       -- ^ position
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 -------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ data Expr
       -- ^ Position
   | BinopExpr BinaryOp Position Expr Expr
   | UnopExpr UnaryOp Position Expr
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 -------------------------------------------------------------------------------
@@ -70,59 +70,68 @@ data Expr
 -------------------------------------------------------------------------------
 data Stmt
   = NilStmt
-  | BlockStmt
-      [Dec]
-      -- ^ decs
-      Stmt
-      -- ^ body
-      Position
-      -- ^ position
-  | ArrayStmt
-      Symbol
-      -- ^ type
-      Expr
-      -- ^ size
-      Expr
-      -- ^ init
-      Position
-      -- ^ positionBegin
-      Position
-      -- ^ positionEnd
-  | CallStmt
-      Symbol
-      -- ^ procedure name
-      [Expr]
-      -- ^ parameter list
-      Position
-  | -- position
-    LabelStmt Symbol Stmt Position
+  | BlockStmt BlockStmt
+  | ArrayStmt ArrayStmt
+  | CallStmt CallStmt
+  | LabelStmt Symbol Stmt Position
   | VarStmt Var
   | -- | fields
     SeqStmt Stmt Stmt
   | AssignStmt [Var] Expr Position
-  | IfStmt
-      Expr
-      -- ^ test
-      Stmt
-      -- ^ thenStmt
-      Stmt
-      -- ^ elseStmt
-      Position
-      -- ^ position
-  | ForStmt
-      Var
-      -- ^ name
-      [ForListElement]
-      -- ^ for list element. It's in reversed order as it's written in the source code.
-      --
-      --  e.g if the statement is `for 1, 2, step 1 until 4, 1, 2`
-      --  the list will be [2, 1, 2 step 1 until 4, 1]
-      Stmt
-      -- ^ loop body
-      Position
-      -- ^ position
+  | IfStmt IfStmt
+  | ForStmt ForStmt
   | GoToStmt Symbol
-  deriving (Show)
+  deriving (Show, Read, Eq)
+
+
+data BlockStmt = BlockStmt_
+  { decs :: [Dec]
+  , body :: Stmt
+  , position :: Position
+  }
+  deriving (Show, Read, Eq)
+
+
+data ArrayStmt = ArrayStmt_
+  { typ :: Symbol
+  , size :: Expr
+  , init :: Expr
+  , positionBegin :: Position
+  , positionEnd :: Position
+  }
+  deriving (Show, Read, Eq)
+
+
+data CallStmt = CallStmt_
+  { name :: Symbol
+  , parameters :: [Expr]
+  , position :: Position
+  }
+  deriving (Show, Read, Eq)
+
+
+data IfStmt = IfStmt_
+  { test :: Expr
+  , thenBranch :: Stmt
+  , elseBranch :: Stmt
+  , position :: Position
+  }
+  deriving (Show, Read, Eq)
+
+
+data ForStmt = ForStmt_
+  { name :: Var
+  , forListElements :: [ForListElement]
+  -- ^ for list element. It's in reversed order as it's written in the source code.
+  --
+  --  e.g if the statement is `for 1, 2, step 1 until 4, 1, 2`
+  --  the list will be [2, 1, 2 step 1 until 4, 1]
+  , loopBody :: Stmt
+  -- ^ loop body
+  , position :: Position
+  -- ^ position
+  }
+  deriving (Show, Read, Eq)
 
 
 data ForListElement
@@ -139,7 +148,7 @@ data ForListElement
       Expr
       -- ^ until
   | Immediate Expr
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 -------------------------------------------------------------------------------
@@ -172,14 +181,14 @@ data Dec
       -- ^ designational expression
       Position
       -- ^ position
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 data ArraySegment = ArraySegment
   { name :: [Symbol]
   , boundPairs :: [(Expr, Expr)]
   }
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 -- type annotations
@@ -190,7 +199,7 @@ data Type
   | StringT
   | ProcT (Maybe Type)
   | LabelT
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 -- OPerators
@@ -208,10 +217,10 @@ data BinaryOp
   | AndOp
   | OrOp
   | XorOp
-  deriving (Eq, Show)
+  deriving (Eq, Show, Read)
 
 
-data UnaryOp = NotOp deriving (Eq, Show)
+data UnaryOp = NotOp deriving (Eq, Show, Read)
 
 
 data Procedure = Procedure
@@ -221,7 +230,7 @@ data Procedure = Procedure
   , body :: Stmt
   , position :: Position
   }
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
 data Parameter = Paramter
@@ -229,10 +238,10 @@ data Parameter = Paramter
   , typ :: Maybe Type
   , evalStrat :: EvalStrat
   }
-  deriving (Show)
+  deriving (Show, Read, Eq)
 
 
-data EvalStrat = CBV | CBN deriving (Show)
+data EvalStrat = CBV | CBN deriving (Show, Read, Eq)
 
 
 -------------------------------------------------------------------------------

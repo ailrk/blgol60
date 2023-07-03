@@ -1,0 +1,24 @@
+begin
+	comment vector generation;
+	
+	real array a[1:100];
+	integer i, dim;
+	real b, c;
+	
+	procedure vectGen( v, ndim, start, stp);
+	real array v; integer ndim; real start, stp;
+	begin
+		integer i;
+		for i := 1 step 1 until ndim do v[i] := start + stp*i
+	end;
+	
+	dim := 6;
+	b :=0; c := 0.1;
+	
+	vectGen(a,dim,b,c);
+	
+	outstring(1,"result = \n");
+	for i := 1 step 1 until dim do outreal (1, a[i]);
+	outstring(1,"\n")
+	
+end

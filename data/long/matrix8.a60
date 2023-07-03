@@ -1,0 +1,23 @@
+begin
+	comment 2x2 linear system solution;
+	
+	real a11, a12, a21, a22;
+	real b1, b2;
+	real d, d1, d2;
+	real x1, x2;
+	
+	a11 := 1.0;  a12 := 2.0; 
+	a21 := 3.0;  a22 := -4.0;
+	b1 := 1.0;   b2 := -1.0;
+	
+	d := a11*a22 - a12*a21;
+	d1 := b1*a22 - a12*b2;
+	d2 := a11*b2 - b1*a21;
+	x1 := d1 / d;   x2 := d2 / d;
+	
+	outstring(1,"determinant = "); outreal(1,d);
+	outstring(1,"\nsolution = ");
+	outreal(1,x1); outreal(1,x2);
+	outstring(1,"\n")
+	
+end

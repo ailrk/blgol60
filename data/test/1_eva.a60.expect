@@ -1,0 +1,29 @@
+( CallStmt
+    ( Symbol
+        { text = "outstring"
+        , hash = -7209414497681734517
+        }
+    )
+    [ IntExpr 1
+        ( Position
+            { file = "test parser"
+            , col = 20
+            , line = 2
+            }
+        )
+    , StringExpr "Hi Adam!\\n"
+        ( Position
+            { file = "test parser"
+            , col = 32
+            , line = 2
+            }
+        )
+    ]
+    ( Position
+        { file = "test parser"
+        , col = 1
+        , line = 3
+        }
+    )
+)
+

@@ -1,0 +1,40 @@
+begin
+	comment vector scalar multiplication;
+	
+	real array a[1:100], a2[1:100];
+	integer i, dim;
+	real b, c, res;
+	
+	procedure vectGen( v, ndim, start, stp);
+	real array v; integer ndim; real start, stp;
+	begin
+		integer i;
+		for i := 1 step 1 until ndim do v[i] := start + stp*i
+	end;
+	
+	real procedure vectSMult( v1, v2, ndim);
+	real array v1; real array v2; integer ndim;
+	begin
+		integer i;
+		real s;
+		s := 0;
+		for i := 1 step 1 until ndim do s := s + v1[i]*v2[i];
+		vectSMult := s
+	end;
+
+	dim := 5;
+	
+	b :=0; c := 0.1;
+	vectGen(a, dim, b, c);
+	
+	b :=0; c := 0.2;
+	vectGen(a2, dim, b, c);
+
+	
+	res := vectSMult(a, a2,dim);
+	
+	outstring(1,"result = ");
+	outreal (1, res);
+	outstring(1,"\n")
+	
+end

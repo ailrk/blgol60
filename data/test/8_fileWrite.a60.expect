@@ -1,0 +1,99 @@
+( BlockStmt
+        [ TypeDec False
+            ( ScalarT
+                ( Symbol
+                    { text = "integer"
+                    , hash = -3981469178763205206
+                    }
+                )
+            )
+            [ Symbol
+                { text = "n"
+                , hash = -2789480685985040196
+                }
+            ]
+            ( Position
+                { file = "test parser"
+                , col = 18
+                , line = 3
+                }
+            )
+        ]
+        ( SeqStmt
+            ( AssignStmt
+                [ SimpleVar
+                    ( Symbol
+                        { text = "n"
+                        , hash = -2789480685985040196
+                        }
+                    )
+                    ( Position
+                        { file = "test parser"
+                        , col = 11
+                        , line = 4
+                        }
+                    )
+                ]
+                ( IntExpr 54321
+                    ( Position
+                        { file = "test parser"
+                        , col = 19
+                        , line = 4
+                        }
+                    )
+                )
+                ( Position
+                    { file = "test parser"
+                    , col = 19
+                    , line = 4
+                    }
+                )
+            ) ( CallStmt
+                ( Symbol
+                    { text = "outinteger"
+                    , hash = -361074373873143019
+                    }
+                )
+                [ IntExpr 2
+                    ( Position
+                        { file = "test parser"
+                        , col = 21
+                        , line = 5
+                        }
+                    )
+                , VarExpr
+                    ( SimpleVar
+                        ( Symbol
+                            { text = "n"
+                            , hash = -2789480685985040196
+                            }
+                        )
+                        ( Position
+                            { file = "test parser"
+                            , col = 23
+                            , line = 5
+                            }
+                        )
+                    )
+                    ( Position
+                        { file = "test parser"
+                        , col = 23
+                        , line = 5
+                        }
+                    )
+                ]
+                ( Position
+                    { file = "test parser"
+                    , col = 1
+                    , line = 6
+                    }
+                )
+            )
+        )
+        ( Position
+            { file = "test parser"
+            , col = 1
+            , line = 7
+            }
+        )
+    )

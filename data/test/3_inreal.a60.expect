@@ -1,0 +1,100 @@
+( BlockStmt
+    [ TypeDec False
+        ( ScalarT
+            ( Symbol
+                { text = "real"
+                , hash = 8637985763396154881
+                }
+            )
+        )
+        [ Symbol
+            { text = "x"
+            , hash = -2789500477194347994
+            }
+        ]
+        ( Position
+            { file = "test parser"
+            , col = 15
+            , line = 2
+            }
+        )
+    ]
+    ( SeqStmt
+        ( AssignStmt
+            [ SimpleVar
+                ( Symbol
+                    { text = "x"
+                    , hash = -2789500477194347994
+                    }
+                )
+                ( Position
+                    { file = "test parser"
+                    , col = 11
+                    , line = 3
+                    }
+                )
+            ]
+            ( RealExpr 1.23
+                ( Position
+                    { file = "test parser"
+                    , col = 18
+                    , line = 3
+                    }
+                )
+            )
+            ( Position
+                { file = "test parser"
+                , col = 18
+                , line = 3
+                }
+            )
+        )
+        ( CallStmt
+            ( Symbol
+                { text = "inreal"
+                , hash = 9170957178177013274
+                }
+            )
+            [ IntExpr 1
+                ( Position
+                    { file = "test parser"
+                    , col = 17
+                    , line = 4
+                    }
+                )
+            , VarExpr
+                ( SimpleVar
+                    ( Symbol
+                        { text = "x"
+                        , hash = -2789500477194347994
+                        }
+                    )
+                    ( Position
+                        { file = "test parser"
+                        , col = 19
+                        , line = 4
+                        }
+                    )
+                )
+                ( Position
+                    { file = "test parser"
+                    , col = 19
+                    , line = 4
+                    }
+                )
+            ]
+            ( Position
+                { file = "test parser"
+                , col = 1
+                , line = 5
+                }
+            )
+        )
+    )
+    ( Position
+        { file = "test parser"
+        , col = 1
+        , line = 6
+        }
+    )
+)

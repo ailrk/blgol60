@@ -1,0 +1,30 @@
+begin
+	comment random vector generation;
+	
+	real array a[1:100];
+	integer i, dim;
+	real b, c;
+	
+	procedure vectRandom( v, ndim, seed);
+	real array v; integer ndim, seed;
+	begin
+		integer i;
+		integer m, a, b, s, r;
+		m := 32768; a := 805; b := 6925;
+		s := seed;
+		for i :=1 step 1 until ndim do
+		begin
+			s := s*a+b; r := entier(s/m); s := s - r*m; 
+			v[i] := (entier((s+1)/(m+1)*10000)) / 10000 
+		end
+	end;
+	
+	dim := 10;
+	
+	vectRandom(a, dim, 0);
+	
+	outstring(1,"result = \n");
+	for i := 1 step 1 until dim do outreal (1, a[i]);
+	outstring(1,"\n")
+	
+end

@@ -47,9 +47,9 @@ dogeAlgol60Def :: Monad m => GenLanguageDef Text u m
 dogeAlgol60Def =
   LanguageDef
     { commentStart = "comment"
-    , commentEnd = ""
+    , commentEnd = ";"
     , commentLine = ""
-    , nestedComments = True
+    , nestedComments = False
     , identStart = P.letter
     , identLetter = P.alphaNum <|> P.oneOf "_"
     , opStart = opLetter dogeAlgol60Def

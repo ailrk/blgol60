@@ -18,9 +18,12 @@ maintainer:         jimmy123good@gmail.com
 -- copyright:
 category:           Language
 extra-source-files: CHANGELOG.md
-data-files:         data/test/*.a60
-      
 
+data-files:        
+  data/test/*.a60
+  data/test/*.a60.expect
+                    
+      
 
 library
     exposed-modules:

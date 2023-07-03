@@ -17,7 +17,7 @@ data Position = Position
   , col :: Int
   , line :: Int
   }
-  deriving (Eq, Show)
+  deriving (Eq, Show, Read)
 
 
 dumpPosition :: Position -> Text

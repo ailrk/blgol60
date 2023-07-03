@@ -1,0 +1,35 @@
+begin
+	comment procedure vectNorm ;
+	
+	real array a[1:100];
+	integer i, dim;
+	real norm;
+	
+	procedure inVector( channel, v, ndim);
+	real array v; integer channel, ndim;
+	begin
+		integer i;
+		ininteger (channel, ndim);
+		for i := 1 step 1 until ndim do inreal (channel, v[i])
+	end;
+	
+	real procedure vectNorm( v, ndim);
+	real array v; integer  ndim;
+	begin
+		integer i;
+		real s;
+		s := 0;
+		for i := 1 step 1 until ndim do s := s + v[i]*v[i];
+		vectNorm := sqrt(s)
+	end;
+	
+	inVector(6, a, dim);
+	
+	norm := vectNorm(a, dim);
+	
+	for i:= 1 step 1 until dim do outreal (1,a[i]);
+	outstring (1,"\n");
+	outreal(1,norm);
+	outstring (1,"\n")
+	
+end

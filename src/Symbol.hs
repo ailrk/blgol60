@@ -26,7 +26,7 @@ data Symbol = Symbol
   { text :: Text
   , hash :: Int
   }
-  deriving (Show, Eq, Ord)
+  deriving (Show, Read, Eq, Ord)
 
 
 toSymbol :: Text -> IO Symbol

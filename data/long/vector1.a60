@@ -1,0 +1,29 @@
+begin
+	comment procedure outVector of writing vector to a file;
+	
+	real array a[1:100];
+	integer i, dim;
+	real b, c;
+	
+	procedure vectGen( v, ndim, start, stp);
+	real array v; integer ndim; real start, stp;
+	begin
+		integer i;
+		for i := 1 step 1 until ndim do v[i] := start + stp*i
+	end;
+	
+	procedure outVector( channel, v, ndim);
+	real array v; integer channel, ndim;
+	begin
+		integer i;
+		outinteger (channel, ndim);
+		for i := 1 step 1 until ndim do outreal (channel, v[i])
+	end;
+	
+	dim := 10;
+	b :=0; c := 0.1;
+	
+	vectGen(a,dim,b,c);
+	
+	outVector(6, a, dim)
+end

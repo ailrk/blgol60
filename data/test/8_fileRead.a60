@@ -1,5 +1,5 @@
 begin
-comment reading from file  FILE_2;
+  comment reading from file  FILE_2;
 	integer n;
 	n := 0;
 	ininteger(2,n);

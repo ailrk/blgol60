@@ -1,0 +1,19 @@
+begin
+	comment procedure inVector of reading vector from a file;
+	
+	real array a[1:100];
+	integer i, dim;
+	
+	procedure inVector( channel, v, ndim);
+	real array v; integer channel, ndim;
+	begin
+		integer i;
+		ininteger (channel, ndim);
+		for i := 1 step 1 until ndim do inreal (channel, v[i])
+	end;
+	
+	inVector(6, a, dim);
+	
+	for i:= 1 step 1 until dim do outreal (1,a[i]);
+	outstring (1,"\n")
+end

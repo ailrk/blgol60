@@ -14,17 +14,17 @@ import Symbol (Symbol)
 
 data Var
   = SimpleVar
+      -- | name
       Symbol
-      -- ^ name
+      -- | posiiton
       Position
-      -- ^ posiiton
   | SubscriptVar
+      -- | subVar
       Var
-      -- ^ subVar
+      -- | subscript
       [Expr]
-      -- ^ subscript
+      -- | position
       Position
-      -- ^ position
   deriving (Show, Read, Eq)
 
 
@@ -44,22 +44,22 @@ data Expr
     LabelExpr Symbol Position
   | SwitchExpr Symbol Expr Position
   | CallExpr
+      -- | callName
       Symbol
-      -- ^ callName
+      -- | callArgs
       [Expr]
-      -- ^ callArgs
-      Position
-      -- ^ position
+      -- | position
       -- note there is both if expr and if statement
-  | IfExpr
-      Expr
-      -- ^ test
-      Expr
-      -- ^ thenExpr
-      Expr
-      -- ^ elseExpr
       Position
-      -- ^ Position
+  | IfExpr
+      -- | test
+      Expr
+      -- | thenExpr
+      Expr
+      -- | elseExpr
+      Expr
+      -- | Position
+      Position
   | BinopExpr BinaryOp Position Expr Expr
   | UnopExpr UnaryOp Position Expr
   deriving (Show, Read, Eq)
@@ -136,17 +136,17 @@ data ForStmt = ForStmt_
 
 data ForListElement
   = While
+      -- | arithmetic expr
       Expr
-      -- ^ arithmetic expr
+      -- | test
       Expr
-      -- ^ test
   | Step
+      -- | init arithmetic expr
       Expr
-      -- ^ init arithmetic expr
+      -- | step
       Expr
-      -- ^ step
+      -- | until
       Expr
-      -- ^ until
   | Immediate Expr
   deriving (Show, Read, Eq)
 
@@ -157,30 +157,30 @@ data ForListElement
 data Dec
   = ProcedureDec Procedure
   | TypeDec
+      -- | local or own
       Bool
-      -- ^ local or own
+      -- | type declaration lists
       Type
-      -- ^ type declaration lists
+      -- | variable name list
       [Symbol]
-      -- ^ variable name list
+      -- | position
       Position
-      -- ^ position
   | ArrayDec
+      -- | local or own
       Bool
-      -- ^ local or own
+      -- | type
       (Maybe Type)
-      -- ^ type
+      -- | variable name list
       [ArraySegment]
-      -- ^ variable name list
+      -- |  position
       Position
-      -- ^  position
   | SwitchDec
+      -- | switch identifier
       Symbol
-      -- ^ switch identifier
+      -- | designational expression
       [Expr]
-      -- ^ designational expression
+      -- | position
       Position
-      -- ^ position
   deriving (Show, Read, Eq)
 
 

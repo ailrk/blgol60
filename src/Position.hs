@@ -33,7 +33,7 @@ dumpPosition (Position file col line) =
     ]
 
 
-getPosFromParsec :: Monad m => ParsecT s u m Position
+getPosFromParsec :: (Monad m) => ParsecT s u m Position
 getPosFromParsec = do
   sourcePos <- P.getPosition
   pure $

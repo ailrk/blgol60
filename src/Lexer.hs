@@ -43,7 +43,7 @@ import Text.Parsec.Token as P
 -- Algol60 BFN
 -- https://www.masswerk.at/algol60/algol60-syntaxversions.htm
 
-dogeAlgol60Def :: Monad m => GenLanguageDef Text u m
+dogeAlgol60Def :: (Monad m) => GenLanguageDef Text u m
 dogeAlgol60Def =
   LanguageDef
     { commentStart = "comment"
@@ -91,65 +91,65 @@ dogeAlgol60Def =
 -- -- | token type
 -- data Token = Token Position (Maybe T.Text) deriving (Eq, Show)
 
-lexer :: Monad m => GenTokenParser Text u m
+lexer :: (Monad m) => GenTokenParser Text u m
 lexer = P.makeTokenParser dogeAlgol60Def
 
 
-identifier :: Monad m => ParsecT Text u m Text
+identifier :: (Monad m) => ParsecT Text u m Text
 identifier = Text.pack <$> P.identifier lexer
 
 
 -- keywords
-reserved :: Monad m => Text -> ParsecT Text u m ()
+reserved :: (Monad m) => Text -> ParsecT Text u m ()
 reserved = P.reserved lexer . Text.unpack
 
 
-reservedOp :: Monad m => Text -> ParsecT Text u m ()
+reservedOp :: (Monad m) => Text -> ParsecT Text u m ()
 reservedOp = P.reservedOp lexer . Text.unpack
 
 
 -- numbers
-unsignedInteger :: Monad m => ParsecT Text u m Integer
+unsignedInteger :: (Monad m) => ParsecT Text u m Integer
 unsignedInteger = P.natural lexer
 
 
-integer :: Monad m => ParsecT Text u m Integer
+integer :: (Monad m) => ParsecT Text u m Integer
 integer = P.integer lexer
 
 
-float :: Monad m => ParsecT Text u m Double
+float :: (Monad m) => ParsecT Text u m Double
 float = P.float lexer
 
 
 -- string literals
-stringLiteral :: Monad m => ParsecT Text u m Text
+stringLiteral :: (Monad m) => ParsecT Text u m Text
 stringLiteral = Text.pack <$> P.stringLiteral lexer
 
 
-charLiteral :: Monad m => ParsecT Text u m Char
+charLiteral :: (Monad m) => ParsecT Text u m Char
 charLiteral = P.charLiteral lexer
 
 
 -- separators
-whileSpace :: Monad m => ParsecT Text u m ()
+whileSpace :: (Monad m) => ParsecT Text u m ()
 whileSpace = P.whiteSpace lexer
 
 
-semiSep :: Monad m => ParsecT Text u m a -> ParsecT Text u m [a]
+semiSep :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
 semiSep = P.semiSep lexer
 
 
-semiSep1 :: Monad m => ParsecT Text u m a -> ParsecT Text u m [a]
+semiSep1 :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
 semiSep1 = P.semiSep1 lexer
 
 
-commaSep :: Monad m => ParsecT Text u m a -> ParsecT Text u m [a]
+commaSep :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
 commaSep = P.commaSep lexer
 
 
-commaSep1 :: Monad m => ParsecT Text u m a -> ParsecT Text u m [a]
+commaSep1 :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
 commaSep1 = P.commaSep1 lexer
 
 
-symbol :: Monad m => Text -> ParsecT Text u m String
+symbol :: (Monad m) => Text -> ParsecT Text u m String
 symbol = P.symbol lexer . Text.unpack

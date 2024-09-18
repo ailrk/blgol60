@@ -12,6 +12,7 @@ import System.IO
 import Test.Hspec
 import Text.Parsec qualified as Parsec
 import Text.Pretty.Simple (pHPrint, pPrint, pPrintForceColor)
+import Debug.Trace (trace, traceM)
 
 
 main :: IO ()
@@ -21,12 +22,14 @@ main = hspec $ do
 
 parserTest :: Spec
 parserTest = describe "parser tests" $ do
-  testParser "data/test/1_adam.a60"
-  testParser "data/test/1_comment.a60"
+  testParser "data/test/1_eva.a60"
 
   where
+    works = do
+      testParser "data/test/1_adam.a60"
+      testParser "data/test/1_comment.a60"
+
     errorParsers = do
-      testParser "data/test/1_eva.a60"
       testParser "data/test/2_adamar.a60"
       testParser "data/test/2_array.a60"
       testParser "data/test/2_outinteger.a60"
@@ -54,12 +57,12 @@ parserTest = describe "parser tests" $ do
       testParser "data/test/7_inchar.a60"
 
 
-
 testParser :: FilePath -> Spec
 testParser file = it ("should parse " ++ show file) $ do
   og <- Text.pack <$> (Paths_test.getDataFileName file >>= readFile)
   expected <- read @Stmt <$> (Paths_test.getDataFileName (file <> ".expect") >>= readFile)
   eParsed <- Parsec.runParserT Parser.program () "test parser" og
+  traceM (show eParsed)
 
   case eParsed of
     Left err -> expectationFailure ("failed to parse " ++ show err)

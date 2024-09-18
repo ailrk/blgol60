@@ -47,7 +47,7 @@ import Lexer qualified
 import Position (getPosFromParsec)
 import Symbol (Symbol)
 import Symbol qualified
-import Text.Parsec (ParsecT, anyChar, between, choice, label, many, many1, satisfy, sepBy, sepBy1, sepEndBy, try)
+import Text.Parsec (ParsecT, anyChar, between, choice, label, many, many1, satisfy, sepBy, sepBy1, sepEndBy, try, parserTrace)
 import Text.Parsec.Expr
   ( Assoc (AssocLeft)
   , Operator (Infix, Prefix)
@@ -59,23 +59,29 @@ import Text.Parsec.Expr
 -- https://www.masswerk.at/algol60/algol60-syntaxversions.htm
 
 program :: (MonadIO m) => ParsecT Text u m Stmt
-program = try block <|> compoundStmt
+program = do
+  parserTrace "<program"
+  try block <|> compoundStmt
 
 
 -------------------------------------------------------------------------------
 -- variable
 -------------------------------------------------------------------------------
 variable :: (MonadIO m) => ParsecT Text u m Var
-variable = flip label "variable" $
+variable = do
+  parserTrace "<variable"
   try subscrptedVariable <|> simpleVariable
 
 
 simpleVariable :: (MonadIO m) => ParsecT Text u m Var
-simpleVariable = SimpleVar <$> identifier <*> getPosFromParsec
+simpleVariable = do
+  parserTrace "simpleVariable"
+  SimpleVar <$> identifier <*> getPosFromParsec
 
 
 subscrptedVariable :: (MonadIO m) => ParsecT Text u m Var
 subscrptedVariable = do
+  parserTrace "<subscrptedVariable"
   name <- identifier
   pos <- getPosFromParsec
   let var = SimpleVar name pos
@@ -87,11 +93,14 @@ subscrptedVariable = do
 -- statement
 
 block :: (MonadIO m) => ParsecT Text u m Stmt
-block = flip label "block" $ try unlabelledBlock <|> labelStmt block
+block = do
+  parserTrace "<block"
+  try unlabelledBlock <|> labelStmt block
 
 
 unlabelledBlock :: (MonadIO m) => ParsecT Text u m Stmt
 unlabelledBlock = do
+  parserTrace "unlabelledBlock"
   decs <- blockHead
   case decs of
     [] -> void $ Lexer.symbol ";"
@@ -102,13 +111,17 @@ unlabelledBlock = do
 
 
 blockHead :: (MonadIO m) => ParsecT Text u m [Dec]
-blockHead = try decl1 <|> decl2
+blockHead = do
+  parserTrace "<blockHead"
+  try decl1 <|> decl2
   where
     decl1 = do
+      parserTrace "<blockHead.decl1"
       Lexer.reserved "begin"
       comment
       declaration `sepEndBy` Lexer.reserved ";"
     decl2 = do
+      parserTrace "blockHead.decl2"
       decs <- blockHead
       Lexer.reserved ";"
       dec <- declaration
@@ -116,30 +129,37 @@ blockHead = try decl1 <|> decl2
 
 
 compoundTail :: (MonadIO m) => ParsecT Text u m Stmt
-compoundTail = try stat1 <|> stat2
+compoundTail = do
+  parserTrace "<compoundTail"
+  try stat1 <|> stat2
   where
     stat1 = stmt <* Lexer.reserved "end" <* comment
     stat2 = SeqStmt <$> (stmt <* Lexer.symbol ";") <*> compoundTail
 
 
 compoundStmt :: (MonadIO m) => ParsecT Text u m Stmt
-compoundStmt = flip label "compoundStmt" $ do
+compoundStmt = do
+  parserTrace "<compoundStmt"
   try unlabelledCompound <|> labelStmt compoundStmt
 
 
 unlabelledCompound :: (MonadIO m) => ParsecT Text u m Stmt
 unlabelledCompound = do
+  parserTrace "unlabelledCompound"
   Lexer.reserved "begin"
   comment
   compoundTail
 
 
 comment :: (MonadIO m) => ParsecT Text u m ()
-comment = void . optional $ between (Lexer.reserved "comment") (Lexer.reserved ";") (many anyChar)
+comment = do
+  parserTrace "<comment"
+  void . optional $ between (Lexer.reserved "comment") (Lexer.reserved ";") (many anyChar)
 
 
 stmt :: (MonadIO m) => ParsecT Text u m Stmt
-stmt = flip label "statement" $
+stmt = do
+  parserTrace "<stmt"
   try forStmt
     <|> try conditionalStmt
     <|> unconditionalStmt
@@ -147,11 +167,14 @@ stmt = flip label "statement" $
 
 -- conditional
 unconditionalStmt :: (MonadIO m) => ParsecT Text u m Stmt
-unconditionalStmt = try basicStmt <|> try compoundStmt <|> block
+unconditionalStmt = do
+  parserTrace "unconditionalStmt"
+  try basicStmt <|> try compoundStmt <|> block
 
 
 conditionalStmt :: (MonadIO m) => ParsecT Text u m Stmt
 conditionalStmt = do
+  parserTrace "<conditionalStmt"
   ifStmt >>= \case
     IfStmt (IfStmt_ b t NilStmt pos) ->
       do
@@ -166,15 +189,20 @@ conditionalStmt = do
 
 
 basicStmt :: (MonadIO m) => ParsecT Text u m Stmt
-basicStmt = try unlabelledBasicStmt <|> labelStmt basicStmt
+basicStmt = do
+  parserTrace "<basicStmt"
+  try unlabelledBasicStmt <|> labelStmt basicStmt
 
 
 unlabelledBasicStmt :: (MonadIO m) => ParsecT Text u m Stmt
-unlabelledBasicStmt = try assignmentStmt <|> try gotoStmt <|> try procedureStmt <|> dummyStmt
+unlabelledBasicStmt = do
+  parserTrace "<unlabelledBasicStmt"
+  try assignmentStmt <|> try gotoStmt <|> try procedureStmt <|> dummyStmt
 
 
 ifStmt :: (MonadIO m) => ParsecT Text u m Stmt
 ifStmt = do
+  parserTrace "<ifStmt"
   ifclause <- ifClauseExpression
   stmt1 <- unconditionalStmt
   stmt2 <- dummyStmt
@@ -184,11 +212,14 @@ ifStmt = do
 
 -- loop
 forStmt :: (MonadIO m) => ParsecT Text u m Stmt
-forStmt = try unlabelledForClause <|> labelStmt unlabelledForClause
+forStmt = do
+  parserTrace "<forStmt"
+  try unlabelledForClause <|> labelStmt unlabelledForClause
 
 
 unlabelledForClause :: (MonadIO m) => ParsecT Text u m Stmt
 unlabelledForClause = do
+  parserTrace "<unlabelledForClause"
   Lexer.reserved "for"
   var <- variable
   Lexer.reserved ":="
@@ -199,11 +230,15 @@ unlabelledForClause = do
 
 
 forList :: (MonadIO m) => ParsecT Text u m [ForListElement]
-forList = flip label "forList" $ forListElement `sepBy1` Lexer.reserved ","
+forList = do
+  parserTrace "<forList"
+  flip label "forList" $ forListElement `sepBy1` Lexer.reserved ","
 
 
 forListElement :: (MonadIO m) => ParsecT Text u m ForListElement
-forListElement = try step <|> try while <|> arith
+forListElement = do
+  parserTrace "<forListElement"
+  try step <|> try while <|> arith
  where
   while =
     While
@@ -219,7 +254,9 @@ forListElement = try step <|> try while <|> arith
 
 -- assignment
 assignmentStmt :: (MonadIO m) => ParsecT Text u m Stmt
-assignmentStmt = try assign1 <|> assign2
+assignmentStmt = do
+  parserTrace "<assignmentStmt"
+  try assign1 <|> assign2
   where
     assign1 = AssignStmt <$> leftPartList <*> arithmeticExpression <*> getPosFromParsec
     assign2 = AssignStmt <$> leftPartList <*> booleanExpression <*> getPosFromParsec
@@ -239,6 +276,7 @@ leftPartList = many1 leftPart
 -- goto
 gotoStmt :: (MonadIO m) => ParsecT Text u m Stmt
 gotoStmt = do
+  parserTrace "<gotStmt"
   Lexer.reserved "goto"
   designationalExpression >>= \case
     LabelExpr sym _ -> pure $ GoToStmt sym
@@ -252,7 +290,8 @@ dummyStmt = pure NilStmt
 
 -- procedure
 procedureStmt :: (MonadIO m) => ParsecT Text u m Stmt
-procedureStmt =
+procedureStmt = do
+  parserTrace "<procedureStmt"
   CallStmt
     <$> ( CallStmt_
             <$> identifier
@@ -367,7 +406,8 @@ labelExpr =
 
 
 labelStmt :: (MonadIO m) => ParsecT Text u m Stmt -> ParsecT Text u m Stmt
-labelStmt statement = flip label "labelStmt" $ do
+labelStmt statement = do
+  parserTrace "<labelStmt"
   l <- (try identifier <|> (Lexer.integer >>= (liftIO . Symbol.toSymbol) . T.pack . show)) <* Lexer.symbol ":"
   s <- statement
   pos <- getPosFromParsec
@@ -379,14 +419,16 @@ designationalExpression = simpleDesignationalExpression
 
 
 simpleDesignationalExpression :: (MonadIO m) => ParsecT Text u m Expr
-simpleDesignationalExpression =
+simpleDesignationalExpression = do
+  parserTrace "<simpleDesignationalExpression"
   try (between (Lexer.symbol "(") (Lexer.symbol ")") designationalExpression)
     <|> try switchDesignator
     <|> labelExpr
 
 
 switchDesignator :: (MonadIO m) => ParsecT Text u m Expr
-switchDesignator = flip label "switch designator" $
+switchDesignator = do
+  parserTrace "<switchDesignator"
   SwitchExpr
     <$> identifier
     <*> between (Lexer.symbol "[") (Lexer.symbol "]") arithmeticExpression
@@ -394,7 +436,8 @@ switchDesignator = flip label "switch designator" $
 
 
 functionDesignator :: (MonadIO m) => ParsecT Text u m Expr
-functionDesignator = flip label "functionDesignator" $
+functionDesignator = do
+  parserTrace "<functionDesignator"
   CallExpr
     <$> identifier
     <*> actualParameterPart
@@ -411,14 +454,15 @@ actualParameterList = actualParameter `sepBy` Lexer.symbol ","
 
 
 actualParameter :: (MonadIO m) => ParsecT Text u m Expr
-actualParameter =
+actualParameter = do
+  parserTrace "<actualParameter"
   try string
     <|> try varExpression
     <|> expression
 
 
 identifier :: (MonadIO m) => ParsecT Text u m Symbol
-identifier = flip label "identifier" $ Lexer.identifier >>= (liftIO . Symbol.toSymbol)
+identifier = Lexer.identifier >>= (liftIO . Symbol.toSymbol)
 
 
 logicalValue :: (Monad m) => ParsecT Text u m Expr
@@ -453,7 +497,8 @@ int = IntExpr . fromInteger <$> Lexer.integer <*> getPosFromParsec
 -- declaration
 -------------------------------------------------------------------------------
 declaration :: (MonadIO m) => ParsecT Text u m Dec
-declaration =
+declaration = do
+  parserTrace "<declaration"
   try procedureDeclaration
     <|> try arrayDeclaration
     <|> try switchDeclaration
@@ -461,7 +506,9 @@ declaration =
 
 
 typeDeclaration :: (MonadIO m) => ParsecT Text u m Dec
-typeDeclaration = TypeDec <$> localOrOwnType <*> typ <*> typeList <*> getPosFromParsec
+typeDeclaration = do
+  parserTrace "<typeDeclaration"
+  TypeDec <$> localOrOwnType <*> typ <*> typeList <*> getPosFromParsec
 
 
 typeList :: (MonadIO m) => ParsecT Text u m [Symbol]
@@ -475,14 +522,16 @@ typ = do
 
 
 localOrOwnType :: (MonadIO m) => ParsecT Text u m Bool
-localOrOwnType =
+localOrOwnType = do
+  parserTrace "<localOrOwnType"
   optional (Lexer.reserved "own") >>= \case
     Just () -> pure True
     Nothing -> pure False
 
 
 arrayDeclaration :: (MonadIO m) => ParsecT Text u m Dec
-arrayDeclaration =
+arrayDeclaration = do
+  parserTrace "<arrayDeclaration"
   ArrayDec
     <$> localOrOwnType
     <*> optional typ
@@ -495,14 +544,17 @@ arrayList = arraySegment `sepBy1` Lexer.symbol ","
 
 
 arraySegment :: (MonadIO m) => ParsecT Text u m ArraySegment
-arraySegment =
+arraySegment = do
+  parserTrace "<arraySegment"
   ArraySegment
     <$> (identifier `sepBy1` Lexer.symbol ",")
     <*> between (Lexer.symbol "[") (Lexer.symbol "]") boundPairList
 
 
 boundPairList :: (MonadIO m) => ParsecT Text u m [(Expr, Expr)]
-boundPairList = boundPair `sepBy1` Lexer.symbol ","
+boundPairList = do
+  parserTrace "<boundPairList"
+  boundPair `sepBy1` Lexer.symbol ","
  where
   lower = arithmeticExpression
   upper = arithmeticExpression
@@ -510,7 +562,9 @@ boundPairList = boundPair `sepBy1` Lexer.symbol ","
 
 
 switchDeclaration :: (MonadIO m) => ParsecT Text u m Dec
-switchDeclaration = SwitchDec <$> identifier <*> switchList <*> getPosFromParsec
+switchDeclaration = do
+  parserTrace "<switchDeclaration"
+  SwitchDec <$> identifier <*> switchList <*> getPosFromParsec
 
 
 switchList :: (MonadIO m) => ParsecT Text u m [Expr]
@@ -518,7 +572,8 @@ switchList = designationalExpression `sepBy1` Lexer.symbol ","
 
 
 procedureDeclaration :: (MonadIO m) => ParsecT Text u m Dec
-procedureDeclaration = flip label "procedure declaration" $ do
+procedureDeclaration = do
+  parserTrace "<procedureDeclaration"
   returnType <- optional typ
   void $ Lexer.symbol "procedure"
   (procedureIdentifier, parameters) <- procedureHeading
@@ -548,7 +603,8 @@ valuePart = Lexer.symbol "value" *> (identifier `sepBy1` Lexer.symbol ",") <* Le
 
 
 specifier :: (MonadIO m) => ParsecT Text u m Type
-specifier =
+specifier = do
+  parserTrace "<specifier"
   try (Lexer.reserved "string" $> StringT)
     <|> try (Lexer.reserved "label" $> LabelT)
     <|> try (Lexer.reserved "switch" $> SwitchT)
@@ -559,6 +615,7 @@ specifier =
 
 specificationPart :: (MonadIO m) => ParsecT Text u m [(Symbol, Type)]
 specificationPart = do
+  parserTrace "<specificationPart"
   tSyms <- ((,) <$> specifier <*> identifier `sepBy1` Lexer.symbol ",") `sepBy` Lexer.symbol ";"
   pure . mconcat . fmap unfold $ tSyms
  where
@@ -567,6 +624,7 @@ specificationPart = do
 
 procedureHeading :: (MonadIO m) => ParsecT Text u m (Symbol, [Parameter])
 procedureHeading = do
+  parserTrace "<procedureHeading"
   procedureIdentifier <- identifier
   params <- formalParameterPart
   values <- valuePart

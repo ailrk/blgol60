@@ -3,10 +3,3 @@ command = "fourmolu"
 options = [ "--mode", "inplace" ]
 includes = [ "*.hs" ]
 excludes = [ ]
-
-
-[formatter.nix]
-command = "nixpkgs-fmt"
-options = []
-includes = ["*.nix"]
-excludes = [ ]

@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use <$>" #-}
 
 module Parser where
 
@@ -45,7 +47,7 @@ import Lexer qualified
 import Position (getPosFromParsec)
 import Symbol (Symbol)
 import Symbol qualified
-import Text.Parsec (ParsecT, anyChar, between, choice, label, many, many1, satisfy, sepBy, sepBy1, sepEndBy, try, (<?>))
+import Text.Parsec (ParsecT, anyChar, between, choice, label, many, many1, satisfy, sepBy, sepBy1, sepEndBy, try)
 import Text.Parsec.Expr
   ( Assoc (AssocLeft)
   , Operator (Infix, Prefix)
@@ -64,7 +66,8 @@ program = try block <|> compoundStmt
 -- variable
 -------------------------------------------------------------------------------
 variable :: (MonadIO m) => ParsecT Text u m Var
-variable = try subscrptedVariable <|> simpleVariable
+variable = flip label "variable" $
+  try subscrptedVariable <|> simpleVariable
 
 
 simpleVariable :: (MonadIO m) => ParsecT Text u m Var
@@ -84,53 +87,48 @@ subscrptedVariable = do
 -- statement
 
 block :: (MonadIO m) => ParsecT Text u m Stmt
-block = try unlabelledBlock <|> labelStmt block <?> "block"
+block = flip label "block" $ try unlabelledBlock <|> labelStmt block
 
 
 unlabelledBlock :: (MonadIO m) => ParsecT Text u m Stmt
-unlabelledBlock = flip label "unlabelled block" $ do
+unlabelledBlock = do
   decs <- blockHead
   case decs of
     [] -> void $ Lexer.symbol ";"
     _ -> pure ()
   statement <- compoundTail
-  BlockStmt
-    . BlockStmt_
-      decs
-      statement
-    <$> ( getPosFromParsec
-            <?> "unlabelled block"
-        )
+  pos <- getPosFromParsec
+  pure . BlockStmt $ BlockStmt_ decs statement pos
 
 
 blockHead :: (MonadIO m) => ParsecT Text u m [Dec]
-blockHead = flip label "block head" $ do
-  try
-    ( do
-        Lexer.reserved "begin"
-        comment
-        declaration `sepEndBy` Lexer.reserved ";"
-    )
-    <|> ( do
-            decs <- blockHead
-            Lexer.reserved ";"
-            dec <- declaration
-            pure (dec : decs)
-        )
+blockHead = try decl1 <|> decl2
+  where
+    decl1 = do
+      Lexer.reserved "begin"
+      comment
+      declaration `sepEndBy` Lexer.reserved ";"
+    decl2 = do
+      decs <- blockHead
+      Lexer.reserved ";"
+      dec <- declaration
+      pure (dec : decs)
 
 
 compoundTail :: (MonadIO m) => ParsecT Text u m Stmt
-compoundTail =
-  try (stmt <* Lexer.reserved "end" <* comment)
-    <|> (SeqStmt <$> (stmt <* Lexer.symbol ";") <*> compoundTail)
+compoundTail = try stat1 <|> stat2
+  where
+    stat1 = stmt <* Lexer.reserved "end" <* comment
+    stat2 = SeqStmt <$> (stmt <* Lexer.symbol ";") <*> compoundTail
 
 
 compoundStmt :: (MonadIO m) => ParsecT Text u m Stmt
-compoundStmt = try unlabelledCompound <|> labelStmt compoundStmt <?> "compound stmt"
+compoundStmt = flip label "compoundStmt" $ do
+  try unlabelledCompound <|> labelStmt compoundStmt
 
 
 unlabelledCompound :: (MonadIO m) => ParsecT Text u m Stmt
-unlabelledCompound = flip label "unlabelled compound" $ do
+unlabelledCompound = do
   Lexer.reserved "begin"
   comment
   compoundTail
@@ -141,16 +139,15 @@ comment = void . optional $ between (Lexer.reserved "comment") (Lexer.reserved "
 
 
 stmt :: (MonadIO m) => ParsecT Text u m Stmt
-stmt =
+stmt = flip label "statement" $
   try forStmt
     <|> try conditionalStmt
     <|> unconditionalStmt
-    <?> "statement"
 
 
 -- conditional
 unconditionalStmt :: (MonadIO m) => ParsecT Text u m Stmt
-unconditionalStmt = try basicStmt <|> try compoundStmt <|> block <?> "unconditional stmt"
+unconditionalStmt = try basicStmt <|> try compoundStmt <|> block
 
 
 conditionalStmt :: (MonadIO m) => ParsecT Text u m Stmt
@@ -173,16 +170,21 @@ basicStmt = try unlabelledBasicStmt <|> labelStmt basicStmt
 
 
 unlabelledBasicStmt :: (MonadIO m) => ParsecT Text u m Stmt
-unlabelledBasicStmt = try assignmentStmt <|> try gotoStmt <|> try procedureStmt <|> dummyStmt <?> "unlablled basic statement"
+unlabelledBasicStmt = try assignmentStmt <|> try gotoStmt <|> try procedureStmt <|> dummyStmt
 
 
 ifStmt :: (MonadIO m) => ParsecT Text u m Stmt
-ifStmt = IfStmt <$> (IfStmt_ <$> ifClauseExpression <*> unconditionalStmt <*> dummyStmt <*> getPosFromParsec <?> "if statment")
+ifStmt = do
+  ifclause <- ifClauseExpression
+  stmt1 <- unconditionalStmt
+  stmt2 <- dummyStmt
+  pos <- getPosFromParsec
+  pure . IfStmt $ IfStmt_ ifclause stmt1 stmt2 pos
 
 
 -- loop
 forStmt :: (MonadIO m) => ParsecT Text u m Stmt
-forStmt = try unlabelledForClause <|> labelStmt unlabelledForClause <?> "for"
+forStmt = try unlabelledForClause <|> labelStmt unlabelledForClause
 
 
 unlabelledForClause :: (MonadIO m) => ParsecT Text u m Stmt
@@ -193,11 +195,11 @@ unlabelledForClause = do
   forListEles <- forList
   Lexer.reserved "do"
   body <- stmt
-  ForStmt . ForStmt_ var forListEles body <$> (getPosFromParsec <?> "for")
+  ForStmt . ForStmt_ var forListEles body <$> getPosFromParsec
 
 
 forList :: (MonadIO m) => ParsecT Text u m [ForListElement]
-forList = forListElement `sepBy1` Lexer.reserved ","
+forList = flip label "forList" $ forListElement `sepBy1` Lexer.reserved ","
 
 
 forListElement :: (MonadIO m) => ParsecT Text u m ForListElement
@@ -207,22 +209,20 @@ forListElement = try step <|> try while <|> arith
     While
       <$> arithmeticExpression
       <*> (Lexer.reserved "while" *> booleanExpression)
-      <?> "while"
   step =
     Step
       <$> arithmeticExpression
       <*> (Lexer.reserved "step" *> arithmeticExpression)
       <*> (Lexer.reserved "until" *> arithmeticExpression)
-      <?> "step"
   arith = Immediate <$> arithmeticExpression
 
 
 -- assignment
 assignmentStmt :: (MonadIO m) => ParsecT Text u m Stmt
-assignmentStmt =
-  try (AssignStmt <$> leftPartList <*> arithmeticExpression <*> getPosFromParsec)
-    <|> (AssignStmt <$> leftPartList <*> booleanExpression <*> getPosFromParsec)
-
+assignmentStmt = try assign1 <|> assign2
+  where
+    assign1 = AssignStmt <$> leftPartList <*> arithmeticExpression <*> getPosFromParsec
+    assign2 = AssignStmt <$> leftPartList <*> booleanExpression <*> getPosFromParsec
 
 destination :: (MonadIO m) => ParsecT Text u m Var
 destination = variable
@@ -257,9 +257,7 @@ procedureStmt =
     <$> ( CallStmt_
             <$> identifier
             <*> actualParameterPart
-            <*> getPosFromParsec
-            <?> "function desginator"
-        )
+            <*> getPosFromParsec)
 
 
 -------------------------------------------------------------------------------
@@ -271,7 +269,6 @@ expression =
     <|> try arithmeticExpression
     <|> try booleanExpression
     <|> designationalExpression
-    <?> "expression"
 
 
 -- binop with position info
@@ -294,7 +291,7 @@ unary text = Prefix $ do
 
 
 varExpression :: (MonadIO m) => ParsecT Text u m Expr
-varExpression = VarExpr <$> variable <*> getPosFromParsec <?> "variable"
+varExpression = VarExpr <$> variable <*> getPosFromParsec
 
 
 ifClauseExpression :: (MonadIO m) => ParsecT Text u m Expr
@@ -308,7 +305,6 @@ ifExpression =
     <*> (expression <* Lexer.reserved "else")
     <*> expression
     <*> getPosFromParsec
-    <?> "if"
 
 
 arithmeticExpression :: (MonadIO m) => ParsecT Text u m Expr
@@ -326,7 +322,6 @@ arithmeticExpression = simpleArithmeticExpression
       <|> try int
       <|> try functionDesignator
       <|> varExpression
-      <?> "simple expression"
 
 
 relationExpression :: (MonadIO m) => ParsecT Text u m Expr
@@ -343,11 +338,11 @@ relationExpression = buildExpressionParser relops relationFactor
       ]
     ]
 
-  relationFactor = try arithmeticExpression <?> "relation expression"
+  relationFactor = try arithmeticExpression
 
 
 booleanExpression :: (MonadIO m) => ParsecT Text u m Expr
-booleanExpression = simpleBooleanExpression
+booleanExpression = label simpleBooleanExpression "booleanExpression"
  where
   simpleBooleanExpression =
     try $ buildExpressionParser boolops booleanFactor
@@ -362,7 +357,6 @@ booleanExpression = simpleBooleanExpression
       <|> try functionDesignator
       <|> try varExpression
       <|> try logicalValue
-      <?> "simple expression"
 
 
 labelExpr :: (MonadIO m) => ParsecT Text u m Expr
@@ -373,12 +367,11 @@ labelExpr =
 
 
 labelStmt :: (MonadIO m) => ParsecT Text u m Stmt -> ParsecT Text u m Stmt
-labelStmt statement =
-  LabelStmt
-    <$> ((identifier <|> (Lexer.integer >>= (liftIO . Symbol.toSymbol) . T.pack . show)) <* Lexer.symbol ":")
-    <*> statement
-    <*> getPosFromParsec
-    <?> "label statement"
+labelStmt statement = flip label "labelStmt" $ do
+  l <- (try identifier <|> (Lexer.integer >>= (liftIO . Symbol.toSymbol) . T.pack . show)) <* Lexer.symbol ":"
+  s <- statement
+  pos <- getPosFromParsec
+  pure $ LabelStmt l s pos
 
 
 designationalExpression :: (MonadIO m) => ParsecT Text u m Expr
@@ -390,31 +383,27 @@ simpleDesignationalExpression =
   try (between (Lexer.symbol "(") (Lexer.symbol ")") designationalExpression)
     <|> try switchDesignator
     <|> labelExpr
-    <?> "designational expression"
 
 
 switchDesignator :: (MonadIO m) => ParsecT Text u m Expr
-switchDesignator =
+switchDesignator = flip label "switch designator" $
   SwitchExpr
     <$> identifier
     <*> between (Lexer.symbol "[") (Lexer.symbol "]") arithmeticExpression
     <*> getPosFromParsec
-    <?> "switch designator"
 
 
 functionDesignator :: (MonadIO m) => ParsecT Text u m Expr
-functionDesignator =
+functionDesignator = flip label "functionDesignator" $
   CallExpr
     <$> identifier
     <*> actualParameterPart
     <*> getPosFromParsec
-    <?> "function desginator"
 
 
 actualParameterPart :: (MonadIO m) => ParsecT Text u m [Expr]
 actualParameterPart =
   between (Lexer.symbol "(") (Lexer.symbol ")") actualParameterList
-    <?> "actual parameter"
 
 
 actualParameterList :: (MonadIO m) => ParsecT Text u m [Expr]
@@ -426,31 +415,38 @@ actualParameter =
   try string
     <|> try varExpression
     <|> expression
-    <?> "actual parameter"
 
 
 identifier :: (MonadIO m) => ParsecT Text u m Symbol
-identifier = Lexer.identifier >>= (liftIO . Symbol.toSymbol)
+identifier = flip label "identifier" $ Lexer.identifier >>= (liftIO . Symbol.toSymbol)
 
 
 logicalValue :: (Monad m) => ParsecT Text u m Expr
-logicalValue = try (Lexer.reserved "true" *> (IntExpr 1 <$> getPosFromParsec)) <|> Lexer.reserved "false" *> (IntExpr 0 <$> getPosFromParsec) <?> "logical value"
+logicalValue = try c1 <|>  c2
+  where
+    c1 = do
+      Lexer.reserved "true"
+      IntExpr 1 <$> getPosFromParsec
+
+    c2 = do
+      Lexer.reserved "false"
+      IntExpr 0 <$> getPosFromParsec
 
 
 string :: (Monad m) => ParsecT Text u m Expr
-string = do
-  let stringLiteral = StringExpr . T.pack <$> many (satisfy (\c -> c `notElem` ['`', '\'', '"'])) <*> getPosFromParsec
-  try (between (Lexer.symbol "`") (Lexer.symbol "'") stringLiteral)
-    <|> between (Lexer.symbol "\"") (Lexer.symbol "\"") stringLiteral
-    <?> "string"
+string = try s1 <|> s2
+  where
+    stringLiteral = StringExpr . T.pack <$> many (satisfy (\c -> c `notElem` ['`', '\'', '"'])) <*> getPosFromParsec
+    s1 = between (Lexer.symbol "`") (Lexer.symbol "'") stringLiteral
+    s2 = between (Lexer.symbol "\"") (Lexer.symbol "\"") stringLiteral
 
 
 real :: (Monad m) => ParsecT Text u m Expr
-real = RealExpr <$> Lexer.float <*> getPosFromParsec <?> "real"
+real = RealExpr <$> Lexer.float <*> getPosFromParsec
 
 
 int :: (Monad m) => ParsecT Text u m Expr
-int = IntExpr . fromInteger <$> Lexer.integer <*> getPosFromParsec <?> "int"
+int = IntExpr . fromInteger <$> Lexer.integer <*> getPosFromParsec
 
 
 -------------------------------------------------------------------------------
@@ -462,7 +458,6 @@ declaration =
     <|> try arrayDeclaration
     <|> try switchDeclaration
     <|> typeDeclaration
-    <?> "declaration"
 
 
 typeDeclaration :: (MonadIO m) => ParsecT Text u m Dec
@@ -493,7 +488,6 @@ arrayDeclaration =
     <*> optional typ
     <*> (Lexer.reserved "array" *> arrayList)
     <*> getPosFromParsec
-    <?> "array declaration"
 
 
 arrayList :: (MonadIO m) => ParsecT Text u m [ArraySegment]
@@ -512,7 +506,6 @@ boundPairList = boundPair `sepBy1` Lexer.symbol ","
  where
   lower = arithmeticExpression
   upper = arithmeticExpression
-
   boundPair = (,) <$> lower <* Lexer.symbol ":" <*> upper
 
 
@@ -562,7 +555,6 @@ specifier =
     <|> try (Lexer.reserved "procedure" $> ProcT Nothing)
     <|> try (typ >>= \t -> Lexer.reserved "procedure" $> ProcT (Just t))
     <|> try typ
-    <?> "specifier"
 
 
 specificationPart :: (MonadIO m) => ParsecT Text u m [(Symbol, Type)]

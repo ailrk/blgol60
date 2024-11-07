@@ -24,7 +24,8 @@ common extensions
 
 common deps
     build-depends:      base >=4.15.0.0
-                      , parsec
+                      , megaparsec
+                      , parser-combinators
                       , bytestring
                       , text
                       , transformers
@@ -72,7 +73,6 @@ library
                          Env
                          Error
                          Frame
-                         Lexer
                          Parser
                          Position
                          Semantic
@@ -101,7 +101,6 @@ test-suite test
     other-modules:       Paths_test
     build-depends:       base >=4.15.0.0
                        , blgol60
-                       , parsec
                        , hspec
                        , pretty-simple
                        , unliftio

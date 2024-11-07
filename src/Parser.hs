@@ -1,52 +1,13 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <$>" #-}
-{-# LANGUAGE MultiWayIf #-}
 
 module Parser where
 
-import AST
-  ( ArraySegment (..)
-  , BlockStmt (..)
-  , CallStmt (..)
-  , Dec (..)
-  , EvalStrat (..)
-  , Expr
-    ( BinopExpr
-    , CallExpr
-    , IfExpr
-    , IntExpr
-    , LabelExpr
-    , RealExpr
-    , StringExpr
-    , SwitchExpr
-    , UnopExpr
-    , VarExpr
-    )
-  , ForListElement (..)
-  , ForStmt (..)
-  , IfStmt (..)
-  , Parameter (..)
-  , ProcedureDec (..)
-  , Stmt (..)
-  , Type (..)
-  , Var (..)
-  , toBinaryOp
-  , toUnaryOp, BinaryOp (..)
-  )
-import Data.String.Interpolate (i)
 import Data.Text qualified as Text
-import Lexer qualified
-import Position (getPosFromParsec)
-import Symbol (Symbol)
-import Symbol qualified
-import Text.Parsec (ParsecT, anyChar, between, choice, many1, chainl1, satisfy, sepBy, sepBy1, sepEndBy, try, parserTrace, lookAhead, getParserState, State (..), sepEndBy1)
-import Text.Parsec.Expr
-  ( Assoc (AssocLeft)
-  , Operator (Infix, Prefix)
-  , buildExpressionParser
-  )
-import Text.Parsec.Token qualified as P
-import Text.Parsec.Char (letter)
+import Text.Megaparsec (ParsecT, MonadParsec (try, getParserState), sepEndBy1, lookAhead, sepBy1, between, manyTill, sepBy, State (..), choice)
+import Text.Megaparsec.Char (letterChar, alphaNumChar, space1, char)
+import Text.Megaparsec.Char.Lexer qualified as Lexer
+import Control.Monad.Combinators.Expr (Operator(..), makeExprParser)
 
 import Text.Printf
 
@@ -54,103 +15,122 @@ import Text.Printf
 -- https://www.masswerk.at/algol60/algol60-syntaxversions.htm
 -- http://www.bitsavers.org/pdf/sds/9xx/lang/900699C_Algol60_Ref_Nov66.pdf
 
-type MonadParse m = (HasCallStack, Monad m)
-
 
 ----------------------------------------
 -- basics
 ----------------------------------------
 
 
-identifier :: (Monad m) => ParsecT Text u m Text
-identifier = Text.pack <$> P.identifier Lexer.lexer
+reservedWords :: [Text]
+reservedWords =
+  [ "begin"
+  , "end"
+  , "own"
+  , "real"
+  , "integer"
+  , "bool"
+  , "array"
+  , "switch"
+  , "procedure"
+  , "value"
+  , "string"
+  , "label"
+  , "goto"
+  , "if"
+  , "then"
+  , "else"
+  , "do"
+  , "for"
+  , "or"
+  , "and"
+  , "not"
+  , "equiv"
+  , "impl"
+  , "step"
+  , "while"
+  , "comment"
+  , "true"
+  , "false"
+  ]
+
+
+lexeme :: ParsecT Void Text m a -> ParsecT Void Text m a
+lexeme = Lexer.lexeme whiteSpace
+
+
+identifier :: ParsecT Void Text m Text
+identifier = (lexeme . try) (p >>= check)
+  where
+    p = Text.pack <$> ((:) <$> letterChar <*> many alphaNumChar)
+    check x =
+     if x `elem` reservedWords
+     then fail $ "keyword " ++ show x ++ " cannot be an identifier"
+     else return x
 
 
 -- keywords
-reserved :: (Monad m) => Text -> ParsecT Text u m ()
-reserved = P.reserved Lexer.lexer . Text.unpack
+reserved :: Text -> ParsecT Void Text m ()
+reserved w = symbol w *> pure ()
 
 
-reservedOp :: (Monad m) => Text -> ParsecT Text u m ()
-reservedOp = P.reservedOp Lexer.lexer . Text.unpack
+integer :: ParsecT Void Text m Integer
+integer = lexeme Lexer.decimal
 
 
--- numbers
-unsignedInteger :: (Monad m) => ParsecT Text u m Integer
-unsignedInteger = P.natural Lexer.lexer
-
-
-integer :: (Monad m) => ParsecT Text u m Integer
-integer = P.integer Lexer.lexer
-
-
-float :: (Monad m) => ParsecT Text u m Double
-float = P.float Lexer.lexer
+float :: ParsecT Void Text m Double
+float = lexeme Lexer.float
 
 
 -- string literals
-stringLiteral :: (Monad m) => ParsecT Text u m Text
-stringLiteral = do
-  Text.pack <$> P.stringLiteral Lexer.lexer
+stringLiteral :: ParsecT Void Text m Text
+stringLiteral = Text.pack <$> (char '"' >> manyTill Lexer.charLiteral (char '"'))
 
 
-charLiteral :: (Monad m) => ParsecT Text u m Char
-charLiteral = P.charLiteral Lexer.lexer
+whiteSpace :: ParsecT Void Text m ()
+whiteSpace = Lexer.space space1 empty (Lexer.skipBlockComment "comment" ";")
 
 
--- separators
-whileSpace :: (Monad m) => ParsecT Text u m ()
-whileSpace = P.whiteSpace Lexer.lexer
+commaSep :: ParsecT Void Text m a -> ParsecT Void Text m [a]
+commaSep p = sepBy p (symbol ",")
 
 
-semiSep :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
-semiSep = P.semiSep Lexer.lexer
+commaSep1 :: ParsecT Void Text m a -> ParsecT Void Text m [a]
+commaSep1 p = sepBy1 p (symbol ",")
 
 
-semiSep1 :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
-semiSep1 = P.semiSep1 Lexer.lexer
+symbol :: Text -> ParsecT Void Text m Text
+symbol s = Lexer.symbol whiteSpace s
 
 
-commaSep :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
-commaSep = P.commaSep Lexer.lexer
+parens :: ParsecT Void Text m a -> ParsecT Void Text m a
+parens = between (symbol "(") (symbol ")")
 
 
-commaSep1 :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m [a]
-commaSep1 = P.commaSep1 Lexer.lexer
+brackets :: ParsecT Void Text m a -> ParsecT Void Text m a
+brackets = between (symbol "[") (symbol "]")
 
 
-symbol :: (Monad m) => Text -> ParsecT Text u m Text
-symbol s = P.symbol Lexer.lexer (Text.unpack s) <&> Text.pack
-
-
-parens :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m a
-parens = P.parens Lexer.lexer
-
-
-brackets :: (Monad m) => ParsecT Text u m a -> ParsecT Text u m a
-brackets = P.brackets Lexer.lexer
-
-logicValue :: (MonadParse m) => ParsecT Text u m ()
+logicValue :: ParsecT Void Text m ()
 logicValue = void $ try (symbol "true") <|> symbol "false"
 
 
-label :: (MonadParse m) => ParsecT Text u m ()
+label :: ParsecT Void Text m ()
 label = void identifier
 
 
-switchIdentifier :: (MonadParse m) => ParsecT Text u m ()
+switchIdentifier :: ParsecT Void Text m ()
 switchIdentifier = void identifier
 
 
-arrayIdentifier :: (MonadParse m) => ParsecT Text u m ()
+arrayIdentifier :: ParsecT Void Text m ()
 arrayIdentifier = void identifier
 
 
-procedureIdentifier :: (MonadParse m) => ParsecT Text u m ()
+procedureIdentifier :: ParsecT Void Text m ()
 procedureIdentifier = void identifier
 
 
-ifClause :: (MonadParse m) => ParsecT Text u m ()
+ifClause :: ParsecT Void Text m ()
 ifClause = do
   symbol "if" *> booleanExpression *> symbol "then" *> pure ()
 
@@ -160,27 +140,27 @@ ifClause = do
 ----------------------------------------
 
 
-variable :: (MonadParse m) => ParsecT Text u m ()
+variable :: ParsecT Void Text m ()
 variable = do
   try subscriptedVariable
   <|> try functionDesignator
   <|> try simpleVariable
 
 
-simpleVariable :: (MonadParse m) => ParsecT Text u m ()
+simpleVariable :: ParsecT Void Text m ()
 simpleVariable = do
   void identifier
 
 
-subscriptedVariable :: (MonadParse m) => ParsecT Text u m ()
+subscriptedVariable :: ParsecT Void Text m ()
 subscriptedVariable = identifier *> brackets subscriptList
 
 
-subscriptList :: (MonadParse m) => ParsecT Text u m ()
+subscriptList :: ParsecT Void Text m ()
 subscriptList = void $ commaSep1 subscriptExpression
 
 
-subscriptExpression :: (MonadParse m) => ParsecT Text u m ()
+subscriptExpression :: ParsecT Void Text m ()
 subscriptExpression = arithmeticExpression
 
 
@@ -189,14 +169,14 @@ subscriptExpression = arithmeticExpression
 ----------------------------------------
 
 
-expression :: (MonadParse m) => ParsecT Text u m ()
+expression :: ParsecT Void Text m ()
 expression = do
   try arithmeticExpression
   <|> try booleanExpression
   <|> try designationalExpression
 
 
-arithmeticExpression :: (MonadParse m) => ParsecT Text u m ()
+arithmeticExpression :: ParsecT Void Text m ()
 arithmeticExpression = do
   _ <- try simpleArithmeticExpression
    <|> try (ifClause
@@ -207,27 +187,44 @@ arithmeticExpression = do
   pure ()
 
 
-simpleArithmeticExpression :: (MonadParse m) => ParsecT Text u m ()
-simpleArithmeticExpression = term `chainl1` addingOperator
+binary :: Text -> (a -> a -> a) -> Operator (ParsecT Void Text m) a
+binary  name f = InfixL  (f <$ symbol name)
+
+
+binaryR :: Text -> (a -> a -> a) -> Operator (ParsecT Void Text m) a
+binaryR  name f = InfixR  (f <$ symbol name)
+
+
+prefix :: Text -> (a -> a) -> Operator (ParsecT Void Text m) a
+prefix  name f = Prefix  (f <$ symbol name)
+
+
+simpleArithmeticExpression :: ParsecT Void Text m ()
+simpleArithmeticExpression = do
+  makeExprParser term table
   where
-    term = try (addingOperator *> term) <|> factor `chainl1` multiplyingOperator
-    factor = primary `chainl1` exponentOperator
-    primary =
-      try (float *> pure ())
-      <|> try (integer *> pure ())
-      <|> try variable
-      <|> parens arithmeticExpression
-    addingOperator =
-      try (symbol "+" *> pure \_ _ -> ())
-      <|> try (symbol "-" *> pure \_ _ -> ())
-    multiplyingOperator =
-      try (symbol "*" *> pure \_ _ -> ())
-      <|> try (symbol "//" *> pure \_ _ -> ())
-      <|> try (symbol "/" *> pure \_ _ -> ())
-    exponentOperator = try (symbol "**" *> pure \_ _ -> ())
+    term = choice
+      [ parens arithmeticExpression
+      , try $ float *> pure ()
+      , try $ integer *> pure ()
+      , variable
+      ]
+    table =
+      [ [ binaryR "**" (\_ _ -> ())]
+      , [ prefix "+" (const ())
+        , prefix "-" (const ())
+        ]
+      , [ binary "*" (\_ _ -> ())
+        , binary "//" (\_ _ -> ())
+        , binary "/" (\_ _ -> ())
+        ]
+      , [ binary "+" (\_ _ -> ())
+        , binary "-" (\_ _ -> ())
+        ]
+      ]
 
 
-booleanExpression :: (MonadParse m) => ParsecT Text u m ()
+booleanExpression :: ParsecT Void Text m ()
 booleanExpression = do
   try simpleBooleanExpression
   <|> try (ifClause
@@ -237,30 +234,33 @@ booleanExpression = do
         *> pure ())
 
 
-simpleBooleanExpression :: (MonadParse m) => ParsecT Text u m ()
-simpleBooleanExpression = implication `chainl1` (symbol "equiv" *> pure \_ _ -> ())
+simpleBooleanExpression :: ParsecT Void Text m ()
+simpleBooleanExpression = makeExprParser term table
   where
-    implication = term `chainl1` try (symbol "impl" *> pure \_ _ -> ())
-    term = factor `chainl1` try (symbol "and" *> pure \_ _ -> ())
-    factor = secondary `chainl1` try (symbol "or" *> pure \_ _ -> ())
-    secondary = primary `chainl1` try (symbol "~" *> pure \_ _ -> ())
-    primary =
+    term =
       try logicValue
       <|> try relation
       <|> try variable
       <|> parens booleanExpression
-    relation = simpleArithmeticExpression `chainl1` relationalOperator
+    relation = makeExprParser simpleArithmeticExpression
+      [ [ binary "<=" (\_ _ -> ())
+        , binary "~=" (\_ _ -> ())
+        , binary ">=" (\_ _ -> ())
+        , binary ">" (\_ _ -> ())
+        , binary "<" (\_ _ -> ())
+        , binary "=" (\_ _ -> ())
+        ]
+      ]
 
-    relationalOperator = do
-      try (symbol "<=" *> pure \_ _ -> ())
-       <|> try (symbol "~=" *> pure \_ _ -> ())
-       <|> try (symbol ">=" *> pure \_ _ -> ())
-       <|> try (symbol ">" *> pure \_ _ -> ())
-       <|> try (symbol "<" *> pure \_ _ -> ())
-       <|> try (symbol "=") *> pure \_ _ ->( )
+    table = [ [ prefix "~" (const ()) ]
+            , [ binary "or" (\_ _ -> ()) ]
+            , [ binary "and" (\_ _ -> ()) ]
+            , [ binary "impl" (\_ _ -> ()) ]
+            , [ binary "equiv" (\_ _ -> ()) ]
+            ]
 
 
-designationalExpression :: (MonadParse m) => ParsecT Text u m ()
+designationalExpression :: ParsecT Void Text m ()
 designationalExpression = do
   try simpleDesignationalExpression
   <|> try (ifClause
@@ -270,7 +270,7 @@ designationalExpression = do
         *> pure ())
 
 
-simpleDesignationalExpression :: (MonadParse m) => ParsecT Text u m ()
+simpleDesignationalExpression :: ParsecT Void Text m ()
 simpleDesignationalExpression =
   try label
   <|> try switchDesignator
@@ -279,7 +279,7 @@ simpleDesignationalExpression =
     switchDesignator = switchIdentifier *> parens subscriptExpression *> pure ()
 
 
-actualParameter :: (MonadParse m) => ParsecT Text u m ()
+actualParameter :: ParsecT Void Text m ()
 actualParameter = do
   try (stringLiteral *> pure ())
   <|> try expression
@@ -287,23 +287,23 @@ actualParameter = do
   <|> procedureIdentifier
 
 
-parameterDelimeter :: (MonadParse m) => ParsecT Text u m ()
+parameterDelimeter :: ParsecT Void Text m ()
 parameterDelimeter = do
-  try (symbol ")" *> many1 (try letter) *> symbol ":(" *> pure ())
+  try (symbol ")" *> some (try letterChar) *> symbol ":(" *> pure ())
   <|> (symbol "," *> pure ())
 
 
-actualParameterList :: (MonadParse m) => ParsecT Text u m ()
+actualParameterList :: ParsecT Void Text m ()
 actualParameterList = do
   sepBy1 actualParameter parameterDelimeter  *> pure ()
 
 
-actualParameterPart :: (MonadParse m) => ParsecT Text u m ()
+actualParameterPart :: ParsecT Void Text m ()
 actualParameterPart = do
   parens actualParameterList *> pure ()
 
 
-functionDesignator :: (MonadParse m) => ParsecT Text u m ()
+functionDesignator :: ParsecT Void Text m ()
 functionDesignator = do
   identifier *> actualParameterPart
 
@@ -313,7 +313,7 @@ functionDesignator = do
 ----------------------------------------
 
 
-declaration :: (MonadParse m) => ParsecT Text u m ()
+declaration :: ParsecT Void Text m ()
 declaration = do
   try arrayDeclaration
   <|> try typeDeclaration
@@ -321,85 +321,85 @@ declaration = do
   <|> procedureDeclaration
 
 
-typeList :: (MonadParse m) => ParsecT Text u m ()
+typeList :: ParsecT Void Text m ()
 typeList = void $ commaSep1 simpleVariable
 
 
-type_ :: (MonadParse m) => ParsecT Text u m ()
+type_ :: ParsecT Void Text m ()
 type_ = void $
   try (symbol "real")
   <|> try (symbol "integer")
   <|> symbol "boolean"
 
 
-localOrOwn :: (MonadParse m) => ParsecT Text u m ()
+localOrOwn :: ParsecT Void Text m ()
 localOrOwn = void $ optional (symbol "own")
 
 
-typeDeclaration :: (MonadParse m) => ParsecT Text u m ()
+typeDeclaration :: ParsecT Void Text m ()
 typeDeclaration = localOrOwn *> type_ *> typeList
 
 
-lowerBound :: (MonadParse m) => ParsecT Text u m ()
+lowerBound :: ParsecT Void Text m ()
 lowerBound = arithmeticExpression
 
 
-upperBound :: (MonadParse m) => ParsecT Text u m ()
+upperBound :: ParsecT Void Text m ()
 upperBound = arithmeticExpression
 
 
-boundPair :: (MonadParse m) => ParsecT Text u m ()
+boundPair :: ParsecT Void Text m ()
 boundPair = lowerBound *> symbol ":" *> upperBound
 
 
-boundPairList :: (MonadParse m) => ParsecT Text u m ()
+boundPairList :: ParsecT Void Text m ()
 boundPairList = void $ commaSep1 boundPair
 
 
-arraySegment :: (MonadParse m) => ParsecT Text u m ()
+arraySegment :: ParsecT Void Text m ()
 arraySegment = commaSep1 arrayIdentifier *> brackets boundPairList
 
 
-arrayList :: (MonadParse m) => ParsecT Text u m ()
+arrayList :: ParsecT Void Text m ()
 arrayList = void $ commaSep1 arraySegment
 
 
-arrayDeclaration :: (MonadParse m) => ParsecT Text u m ()
+arrayDeclaration :: ParsecT Void Text m ()
 arrayDeclaration = do
   try (reserved "array" *> arrayList)
   <|> (localOrOwn *> type_ *> reserved "array" *> arrayList)
 
 
-switchList :: (MonadParse m) => ParsecT Text u m ()
-switchList = void $ many1 designationalExpression
+switchList :: ParsecT Void Text m ()
+switchList = some designationalExpression *> pure ()
 
 
-switchDeclaration :: (MonadParse m) => ParsecT Text u m ()
+switchDeclaration :: ParsecT Void Text m ()
 switchDeclaration = reserved "switch" *> switchIdentifier *> symbol ":="  *> switchList
 
 
-formalParameter :: (MonadParse m) => ParsecT Text u m ()
+formalParameter :: ParsecT Void Text m ()
 formalParameter = identifier *> pure ()
 
 
-formalParameterList :: (MonadParse m) => ParsecT Text u m ()
+formalParameterList :: ParsecT Void Text m ()
 formalParameterList = sepBy1 formalParameter parameterDelimeter  *> pure ()
 
 
-formalParameterPart :: (MonadParse m) => ParsecT Text u m ()
+formalParameterPart :: ParsecT Void Text m ()
 formalParameterPart = optional (parens formalParameterList) *> pure ()
 
 
-identifierList :: (MonadParse m) => ParsecT Text u m ()
+identifierList :: ParsecT Void Text m ()
 identifierList = void $ commaSep1 identifier
 
 
-valuePart :: (MonadParse m) => ParsecT Text u m ()
+valuePart :: ParsecT Void Text m ()
 valuePart = do
   void $ optional (reserved "value" *> identifierList *> symbol ";" *> pure ())
 
 
-specifier :: (MonadParse m) => ParsecT Text u m ()
+specifier :: ParsecT Void Text m ()
 specifier = do
   try (reserved "string" *> pure ())
   <|> try (reserved "label" *> pure ())
@@ -411,12 +411,12 @@ specifier = do
   <|> type_
 
 
-specificationPart :: (MonadParse m) => ParsecT Text u m ()
+specificationPart :: ParsecT Void Text m ()
 specificationPart = do
   many (try (specifier *> identifierList *> symbol ";")) *> pure ()
 
 
-procedureHeading :: (MonadParse m) => ParsecT Text u m ()
+procedureHeading :: ParsecT Void Text m ()
 procedureHeading = do
   procedureIdentifier
   *> formalParameterPart
@@ -425,11 +425,11 @@ procedureHeading = do
   *> specificationPart
 
 
-procedureBody :: (MonadParse m) => ParsecT Text u m ()
+procedureBody :: ParsecT Void Text m ()
 procedureBody = statement
 
 
-procedureDeclaration :: (MonadParse m) => ParsecT Text u m ()
+procedureDeclaration :: ParsecT Void Text m ()
 procedureDeclaration = do
   try (type_ *> reserved "procedure" *> procedureHeading *> procedureBody)
   <|> (reserved "procedure" *> procedureHeading *> procedureBody)
@@ -440,17 +440,17 @@ procedureDeclaration = do
 ----------------------------------------
 
 
-statement :: (MonadParse m) => ParsecT Text u m ()
+statement :: ParsecT Void Text m ()
 statement = do
   try unconditionalStatement <|> try conditionalStatement <|> forStatement
 
 
-unconditionalStatement :: (MonadParse m) => ParsecT Text u m ()
+unconditionalStatement :: ParsecT Void Text m ()
 unconditionalStatement = do
   try basicStatement <|> try compoundStatement <|> block
 
 
-unlabelledBasicStatement :: (MonadParse m) => ParsecT Text u m ()
+unlabelledBasicStatement :: ParsecT Void Text m ()
 unlabelledBasicStatement = do
   try assignmentStatement
   <|> try gotoStatement
@@ -458,56 +458,56 @@ unlabelledBasicStatement = do
   <|> dummyStatement
 
 
-basicStatement :: (MonadParse m) => ParsecT Text u m ()
+basicStatement :: ParsecT Void Text m ()
 basicStatement = do
   try (label *> symbol ":" *> basicStatement) <|> unlabelledBasicStatement
 
 
-leftPart :: (MonadParse m) => ParsecT Text u m ()
+leftPart :: ParsecT Void Text m ()
 leftPart = do
   try (variable *> symbol ":=" *> pure ())
   <|> try (procedureIdentifier *> symbol ":=" *> pure ())
 
 
-leftPartList :: (MonadParse m) => ParsecT Text u m ()
+leftPartList :: ParsecT Void Text m ()
 leftPartList = do
-  many1 (try leftPart) *> pure ()
+  some (try leftPart) *> pure ()
 
 
-assignmentStatement :: (MonadParse m) => ParsecT Text u m ()
+assignmentStatement :: ParsecT Void Text m ()
 assignmentStatement = do
   leftPartList *> (try arithmeticExpression <|> booleanExpression)
 
 
-gotoStatement :: (MonadParse m) => ParsecT Text u m ()
+gotoStatement :: ParsecT Void Text m ()
 gotoStatement = do
   reserved "goto" *> designationalExpression *> pure ()
 
 
-procedureStatement :: (MonadParse m) => ParsecT Text u m ()
+procedureStatement :: ParsecT Void Text m ()
 procedureStatement = do
   try (procedureIdentifier *> actualParameterPart)
   <|> procedureIdentifier
 
 
-dummyStatement :: (MonadParse m) => ParsecT Text u m ()
+dummyStatement :: ParsecT Void Text m ()
 dummyStatement =
   try (lookAhead (reserved "end"))
   <|> try (lookAhead (symbol ";" *> pure ()))
 
 
-forListElement :: (MonadParse m) => ParsecT Text u m ()
+forListElement :: ParsecT Void Text m ()
 forListElement = do
   try (arithmeticExpression *> reserved "step" *> arithmeticExpression *> reserved "until" *> arithmeticExpression)
   <|> try (arithmeticExpression *> reserved "while" *> booleanExpression)
   <|> arithmeticExpression
 
 
-forList :: (MonadParse m) => ParsecT Text u m ()
+forList :: ParsecT Void Text m ()
 forList = commaSep1 forListElement *> pure ()
 
 
-forClause :: (MonadParse m) => ParsecT Text u m ()
+forClause :: ParsecT Void Text m ()
 forClause = do
   reserved "for"
   *> variable
@@ -516,12 +516,12 @@ forClause = do
   *> reserved "do"
 
 
-forStatement :: (MonadParse m) => ParsecT Text u m ()
+forStatement :: ParsecT Void Text m ()
 forStatement = do
   try (label *> symbol ":" *> forStatement) <|> (forClause *> statement)
 
 
-conditionalStatement :: (MonadParse m) => ParsecT Text u m ()
+conditionalStatement :: ParsecT Void Text m ()
 conditionalStatement = do
   try (label *> symbol ":" *> conditionalStatement)
   <|> conditionalStatement'
@@ -537,35 +537,42 @@ conditionalStatement = do
 ----------------------------------------
 
 
-compoundTail :: (MonadParse m) => ParsecT Text u m ()
+compoundTail :: ParsecT Void Text m ()
 compoundTail = do
   statement *> (reserved "end" <|> (symbol ";" *> compoundTail))
 
 
-blockHead :: (MonadParse m) => ParsecT Text u m ()
+blockHead :: ParsecT Void Text m ()
 blockHead = do
   reserved "begin" *> sepEndBy1 declaration (symbol ";") *> pure ()
 
 
-unlabeledCompoundStatement :: (MonadParse m) => ParsecT Text u m ()
+unlabeledCompoundStatement :: ParsecT Void Text m ()
 unlabeledCompoundStatement = reserved "begin" *> compoundTail
 
 
-unlabeledBlock :: (MonadParse m) => ParsecT Text u m ()
+unlabeledBlock :: ParsecT Void Text m ()
 unlabeledBlock = do
   blockHead *> compoundTail
 
 
-compoundStatement :: (MonadParse m) => ParsecT Text u m ()
+compoundStatement :: ParsecT Void Text m ()
 compoundStatement = do
   try (label *> symbol ":" *> compoundStatement)
   <|> unlabeledCompoundStatement
 
 
-block :: (MonadParse m) => ParsecT Text u m ()
+block :: ParsecT Void Text m ()
 block = do
   try (label *> symbol ":" *> block) <|> unlabeledBlock
 
 
-program :: (MonadParse m) => ParsecT Text u m ()
+program :: ParsecT Void Text m ()
 program = try block <|> compoundStatement
+
+
+debug :: String -> ParsecT Void Text m ()
+debug n = do
+  s <- getParserState
+  let x = printf "%s>\n%s" n s.stateInput
+  traceM x

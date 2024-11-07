@@ -75,6 +75,7 @@ library
                          Env
                          Error
                          Frame
+                         Monad
                          Parser
                          Position
                          Semantic

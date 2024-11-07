@@ -3,7 +3,6 @@
 module Temp
   ( Label
   , Temp
-  , newTemp
   , newNamedLabel
   , newLabel
   )
@@ -13,39 +12,27 @@ where
 -- label refers to memory address.
 
 import Data.Text qualified as T
-import GHC.IO (unsafePerformIO)
 import Symbol qualified
+import UnliftIO (MonadUnliftIO)
+import Symbol (HasSymbolTable)
 
 
 type Label = Symbol.Symbol
 data Temp = Temp Int (Maybe T.Text)
 
 
-
-counterTemp :: IORef Int
-counterTemp = unsafePerformIO $ newIORef 0
-{-# NOINLINE counterTemp #-}
-
-
-newTemp :: IO Temp
-newTemp = do
-  i <- readIORef counterTemp
-  modifyIORef counterTemp (+ 1)
-  return $ Temp i (Just "t")
-
-
-counterLabel :: IORef Int
-counterLabel = unsafePerformIO $ newIORef 0
-{-# NOINLINE counterLabel #-}
+class HasTempCounter ctx where
+  getTempCounter :: ctx -> IORef Int
 
 
 -- unique memory address label
-newNamedLabel :: T.Text -> IO Label
+newNamedLabel :: (HasTempCounter ctx, HasSymbolTable ctx, MonadReader ctx m, MonadUnliftIO m) => T.Text -> m Label
 newNamedLabel name = do
-  i <- readIORef counterLabel
-  modifyIORef counterLabel (+ 1)
+  ref <- getTempCounter <$> ask
+  modifyIORef ref (+ 1)
+  i <- readIORef ref
   Symbol.toSymbol (T.concat [name, show i])
 
 
-newLabel :: IO Label
+newLabel :: (HasTempCounter ctx, HasSymbolTable ctx, MonadReader ctx m, MonadUnliftIO m) => m Label
 newLabel = newNamedLabel "l"

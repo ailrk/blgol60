@@ -5,24 +5,25 @@
 
 module Symbol
   ( Symbol(..)
+  , SymbolTable(..)
   , toSymbol
   , lookupSymbol
   , insertSymbol
+  , newSymbolTable
+  , HasSymbolTable(..)
   )
 where
 
 import Data.Hashable qualified as Hashable
 import Data.HashMap.Strict qualified as HM
-import GHC.IO (unsafePerformIO)
+import UnliftIO (MonadUnliftIO)
+
+
+class HasSymbolTable ctx where
+  getSymbolTableRef :: ctx -> IORef SymbolTable
 
 
 newtype SymbolTable = SymbolTable {getSymbolTable :: HashMap Text Int}
-
-
--- | Memoization table for symbol lookup.
-memoref :: IORef SymbolTable
-memoref = unsafePerformIO $ newIORef emptySymbol
-{-# NOINLINE memoref #-}
 
 
 data Symbol = Symbol
@@ -32,19 +33,20 @@ data Symbol = Symbol
   deriving (Show, Read, Eq, Ord)
 
 
-toSymbol :: Text -> IO Symbol
+newSymbolTable :: SymbolTable
+newSymbolTable = SymbolTable HM.empty
+
+
+toSymbol :: (HasSymbolTable ctx, MonadReader ctx m, MonadUnliftIO m) => Text -> m Symbol
 toSymbol text = do
-  symbolTable <- readIORef memoref
+  symbolTable <- ask >>= readIORef . getSymbolTableRef
   case lookupSymbol text symbolTable of
     Just symbol -> pure symbol
     Nothing -> do
       let n = Hashable.hash text
-      memoref `writeIORef` insertSymbol text n symbolTable
+      ref <- getSymbolTableRef <$> ask
+      ref `writeIORef` insertSymbol text n symbolTable
       pure (Symbol text n)
-
-
-emptySymbol :: SymbolTable
-emptySymbol = SymbolTable HM.empty
 
 
 lookupSymbol :: Text -> SymbolTable -> Maybe Symbol

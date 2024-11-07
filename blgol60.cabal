@@ -41,6 +41,7 @@ common deps
                       , lens
                       , relude
                       , deepseq
+                      , pretty-simple
 
 common relude-mixins
     mixins:             base hiding (Prelude)

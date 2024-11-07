@@ -29,8 +29,7 @@ newtype Algol60 a = Algol60 (ReaderT Context IO a)
   , MonadReader Context
   , MonadFail
   , MonadIO
-  , MonadUnliftIO
-  )
+  , MonadUnliftIO)
 
 
 runAlgol60 :: Algol60 a -> ReaderT Context IO a

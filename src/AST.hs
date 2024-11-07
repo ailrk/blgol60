@@ -2,12 +2,12 @@ module AST
   ( Var(..)
   , SimpleVar(..)
   , SubscriptVar(..)
+  , FunctionDesignator(..)
   , Expr(..)
   , Stmt(..)
   , BlockStmt(..)
   , ArrayStmt(..)
   , CallStmt(..)
-  , LabelStmt(..)
   , AssignStmt(..)
   , IfStmt(..)
   , ForStmt(..)
@@ -37,9 +37,11 @@ import Symbol (Symbol)
 -- Variable
 ----------------------------------------
 
+
 data Var
   = SimpleVar SimpleVar
   | SubscriptVar SubscriptVar
+  | FunctionDesignator FunctionDesignator
   deriving (Show, Read, Eq)
 
 
@@ -51,11 +53,19 @@ data SimpleVar = SimpleVar_
 
 
 data SubscriptVar = SubscriptVar_
-  { name       :: Var
+  { name       :: Symbol
   , subscripts :: [Expr]
   , position   :: Position
   }
   deriving (Show, Read, Eq, Generic)
+
+
+data FunctionDesignator = FunctionDesignator_
+  { name      :: Symbol
+  , argumnets :: [Expr]
+  , position  :: Position
+  }
+  deriving (Show, Read, Eq)
 
 
 ----------------------------------------
@@ -65,10 +75,11 @@ data SubscriptVar = SubscriptVar_
 -- Algo60 only have Int, real, and string three primitive types.
 data Expr
   = NilExpr
-  | VarExpr Var Position
+  | VarExpr Var
   | -- scalaras
     IntExpr Integer Position
   | RealExpr Double Position
+  | BoolExpr Bool Position
   | StringExpr Text Position
   | -- different from val, label is just a symbol.
     LabelExpr Symbol Position
@@ -102,14 +113,15 @@ data Stmt
   = NilStmt
   | BlockStmt BlockStmt
   | ArrayStmt ArrayStmt
-  | CallStmt CallStmt
-  | LabelStmt LabelStmt
+  | CallStmt Expr
+  | LabelStmt Symbol Stmt
   | VarStmt Var
   | SeqStmt Stmt Stmt
   | AssignStmt AssignStmt
   | IfStmt IfStmt
   | ForStmt ForStmt
-  | GoToStmt Symbol
+  | GotoStmt Expr
+  | DummyStmt
   deriving (Show, Read, Eq)
 
 
@@ -135,14 +147,6 @@ data CallStmt = CallStmt_
   { name       :: Symbol
   , parameters :: [Expr]
   , position   :: Position
-  }
-  deriving (Show, Read, Eq, Generic)
-
-
-data LabelStmt = LabelStmt_
-  { name      :: Symbol
-  , statement :: Stmt
-  , position  :: Position
   }
   deriving (Show, Read, Eq, Generic)
 
@@ -204,8 +208,8 @@ data Dec
 
 data TypeDec = TypeDec_
   { own         :: Bool
-  , typeDecList :: [Type]
-  , nameList    :: [Symbol]
+  , typeDecList :: Type
+  , nameList    :: [Var]
   , position    :: Position
   }
   deriving (Show, Read, Eq)
@@ -222,7 +226,7 @@ data ArrayDec = ArrayDec_
 
 data ArraySegment = ArraySegment
   { names :: [Symbol]
-  , bound :: (Expr, Expr)
+  , bounds :: [(Expr, Expr)]
   }
   deriving (Show, Read, Eq, Generic)
 
@@ -237,13 +241,15 @@ data SwitchDec = SwitchDec_
 
 -- type annotations
 data Type
-  = ScalarT Symbol
+  = IntegerT
+  | RealT
+  | BooleanT
   | ArrayT
-  | SwitchT
-  | StringT
-  | ProcT (Maybe Type)
-  | LabelT
+  | UnknownT
   deriving (Show, Read, Eq)
+
+instance Semigroup Type where
+  a <> _ = a
 
 
 -- OPerators
@@ -270,6 +276,8 @@ data BinaryOp
 data UnaryOp
   = NotOp
   | BitNotOp
+  | PositiveOp
+  | NegativeOp
     deriving (Eq, Show, Read)
 
 
@@ -285,7 +293,7 @@ data ProcedureDec = ProcedureDec_
 
 data Parameter = Parameter
   { name      :: Symbol
-  , typ       :: Maybe Type
+  , typ       :: Type
   , evalStrat :: EvalStrat
   }
   deriving (Show, Read, Eq, Generic)

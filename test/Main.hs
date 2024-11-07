@@ -10,7 +10,6 @@ import Parser qualified
 import Paths_test (getDataFileName)
 import System.IO
 import Test.Hspec
-import Text.Parsec qualified as Parsec
 import Text.Pretty.Simple (pHPrint, pPrint, pPrintForceColor)
 
 

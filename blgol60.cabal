@@ -21,6 +21,7 @@ common extensions
                         QuasiQuotes
                         StandaloneDeriving
                         BlockArguments
+                        RecordWildCards
 
 common deps
     build-depends:      base >=4.15.0.0
@@ -39,6 +40,7 @@ common deps
                       , generic-lens
                       , lens
                       , relude
+                      , deepseq
 
 common relude-mixins
     mixins:             base hiding (Prelude)

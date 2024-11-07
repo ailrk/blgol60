@@ -1,27 +1,26 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Position
   ( Position (..)
-  , dumpPosition
+  , getPosition
   )
 where
 
-import Data.Text qualified as Text
+import Text.Megaparsec (Pos, TraversableStream, ParsecT, SourcePos (..), getSourcePos)
 
 data Position = Position
-  { file :: Text
-  , col :: Int
-  , line :: Int
+  { file :: FilePath
+  , col :: !Pos
+  , line :: !Pos
   }
-  deriving (Eq, Show, Read)
+  deriving (Eq, Show, Read, Generic, NFData)
 
 
-dumpPosition :: Position -> Text
-dumpPosition (Position file col line) =
-  mconcat
-    [ "<position: "
-    , file
-    , " line: "
-    , Text.pack . show $ line
-    , " col: "
-    , Text.pack . show $ col
-    , ">"
-    ]
+getPosition :: (TraversableStream s, Ord e) => ParsecT e s m Position
+getPosition = do
+  SourcePos {..} <- getSourcePos
+  pure Position
+    { file = sourceName
+    , line = sourceLine
+    , col = sourceColumn
+    }
+

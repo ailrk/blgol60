@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <$>" #-}
+{-# HLINT ignore "Use module export list" #-}
 
 module Parser where
 
 import Data.Text qualified as Text
-import Text.Megaparsec (ParsecT, MonadParsec (try, getParserState), sepEndBy1, lookAhead, sepBy1, between, manyTill, sepBy, State (..), choice)
+import Text.Megaparsec (ParsecT, MonadParsec (try), sepEndBy1, lookAhead, sepBy1, between, manyTill, sepBy, choice)
 import Text.Megaparsec.Char (letterChar, alphaNumChar, space1, char)
 import Text.Megaparsec.Char.Lexer qualified as Lexer
 import Control.Monad.Combinators.Expr (Operator(..), makeExprParser)
 
-import Text.Printf
 
 -- Algol60 BNF
 -- https://www.masswerk.at/algol60/algol60-syntaxversions.htm
@@ -569,10 +569,3 @@ block = do
 
 program :: ParsecT Void Text m ()
 program = try block <|> compoundStatement
-
-
-debug :: String -> ParsecT Void Text m ()
-debug n = do
-  s <- getParserState
-  let x = printf "%s>\n%s" n s.stateInput
-  traceM x

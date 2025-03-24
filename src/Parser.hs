@@ -208,15 +208,15 @@ arithmeticExpression =
 
 
 binary :: CanParse ctx m => Text -> (a -> a -> a) -> Operator (ParsecT Void Text m) a
-binary  name f = InfixL  (f <$ symbol name)
+binary  name f = InfixL (f <$ symbol name)
 
 
 binaryR :: CanParse ctx m => Text -> (a -> a -> a) -> Operator (ParsecT Void Text m) a
-binaryR  name f = InfixR  (f <$ symbol name)
+binaryR  name f = InfixR (f <$ symbol name)
 
 
 prefix :: CanParse ctx m => Text -> (a -> a) -> Operator (ParsecT Void Text m) a
-prefix  name f = Prefix  (f <$ symbol name)
+prefix  name f = Prefix (f <$ symbol name)
 
 
 simpleArithmeticExpression :: CanParse ctx m => Parser m Expr

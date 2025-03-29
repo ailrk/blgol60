@@ -20,6 +20,8 @@ import UnliftIO (MonadUnliftIO)
 import Prelude hiding (Type)
 import Control.Lens ((%~), _1, _2, (^.), (?~))
 import Data.Generics.Labels ()
+import Control.Monad.Combinators (skipMany)
+import Text.Megaparsec.Char (space, newline)
 
 
 -- Algol60 BNF
@@ -74,9 +76,9 @@ lexeme = Lexer.lexeme whiteSpace
 
 
 identifier :: CanParse ctx m => Parser m Symbol
-identifier = (lexeme . try) (p >>= check ) >>= lift . toSymbol
+identifier = (lexeme . try) (p >>= check) >>= lift . toSymbol
   where
-    p = Text.pack <$> ((:) <$> letterChar <*> many alphaNumChar)
+    p = Text.pack <$> ((:) <$> (letterChar <|> char '_') <*> many (alphaNumChar <|> char '_'))
     check x =
      if x `elem` reservedWords
      then fail $ "keyword " ++ show x ++ " cannot be an identifier"
@@ -293,11 +295,12 @@ designationalExpression = do
 
 simpleDesignationalExpression :: CanParse ctx m => Parser m Expr
 simpleDesignationalExpression =
-  try (LabelExpr <$> label <*> getPosition)
-  <|> try switchDesignator
+  try switchDesignator
+  <|> try (LabelExpr <$> label <*> getPosition)
   <|> parens designationalExpression
   where
-    switchDesignator = SwitchExpr <$> switchIdentifier *> parens subscriptExpression
+    switchDesignator =
+      SwitchExpr <$> switchIdentifier *> brackets subscriptExpression
 
 
 actualParameter :: CanParse ctx m => Parser m Expr
@@ -398,7 +401,7 @@ arrayDeclaration = ArrayDec <$> (try simple <|> full)
 
 
 switchList :: CanParse ctx m => Parser m [Expr]
-switchList = some designationalExpression
+switchList = commaSep1 designationalExpression
 
 
 switchDeclaration :: CanParse ctx m => Parser m Dec
@@ -493,7 +496,9 @@ procedureDeclaration = ProcedureDec <$> (try withType <|> withoutType)
 
 statement :: CanParse ctx m => Parser m Stmt
 statement =
-  try unconditionalStatement <|> try conditionalStatement <|> forStatement
+  try conditionalStatement
+  <|> try unconditionalStatement
+  <|> forStatement
 
 
 unconditionalStatement :: CanParse ctx m => Parser m Stmt
@@ -533,8 +538,7 @@ assignmentStatement = AssignStmt <$>
 
 
 gotoStatement :: CanParse ctx m => Parser m Stmt
-gotoStatement = do
- GotoStmt <$> (reserved "goto" *> designationalExpression)
+gotoStatement = GotoStmt <$> (reserved "goto" *> designationalExpression)
 
 
 procedureStatement :: CanParse ctx m => Parser m Stmt
@@ -593,7 +597,7 @@ conditionalStatement = do
 compoundTail :: CanParse ctx m => Parser m Stmt
 compoundTail = do SeqStmt <$> statement <*> next
   where
-    next = reserved "end" *> pure DummyStmt
+    next = dummyStatement
       <|> symbol ";" *> compoundTail
 
 
@@ -618,9 +622,14 @@ compoundStatement = do
 
 
 block :: CanParse ctx m => Parser m Stmt
-block = do
-  try (label *> symbol ":" *> block) <|> unlabeledBlock
+block = try (label *> symbol ":" *> block) <|> unlabeledBlock
 
 
 program :: CanParse ctx m => Parser m Stmt
-program = try block <|> compoundStatement
+program = do
+  emptyLines
+  stmt <- try block <|> compoundStatement
+  emptyLines
+  pure stmt
+  where
+    emptyLines = skipMany (void space1 <|> void (newline *> space))

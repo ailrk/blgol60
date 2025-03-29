@@ -3,7 +3,7 @@ begin
    procedure do_it (s); string s;
    begin
       procedure go_to_1 (L); label L; goto L;
-      procedure switch_aaa (Laa); label Laa; 
+      procedure switch_aaa (Laa); label Laa;
       begin
          switch L := if i > 5 then L2 else L1, L1;
          go_to_1 (L [i]);

@@ -1,85 +1,85 @@
-'begin'
-	'comment'
+begin
+	comment
 		FIND A SOLUTION FOR THE `N QUEEN' PROBLEM.
 		(GOT THE ALGORITHM FROM A MODULA PROGRAM FROM
 		 MARTIN NEITZEL).
 	;
 
-	'integer' N, MAXN;
+	integer N, MAXN;
 
-	MAXN := 11;		'comment' MAXIMUM SIZE;
-	N := 2;			'comment' CURRENT SIZE;
+	MAXN := 11;		comment MAXIMUM SIZE;
+	N := 2;			comment CURRENT SIZE;
 
 TRY NEXT N:
 
-	'begin'
+	begin
 
-	'integer' 'array' COLUMN [1 : N];
-	'boolean' 'array' EMPCOL [1 : N];
-	'boolean' 'array' EMPUP [-N+1 : N-1];
-	'boolean' 'array' EMPDO [2 : 2*N];
-	'integer' I;
+	integer array COLUMN [1 : N];
+	boolean array EMPCOL [1 : N];
+	boolean array EMPUP [-N+1 : N-1];
+	boolean array EMPDO [2 : 2*N];
+	integer I;
 
-	'procedure' PRINT;
-	'comment'
+	procedure PRINT;
+	comment
 		PRINT THE CURRENT SOLUTION IN A CHESSBOARD ALIKE
 		PICTURE ;
-	'begin'
-		'integer' I, J;
+	begin
+		integer I, J;
 
-		'procedure' OUTFRAME;
-		'begin'
-			'integer' I;
+		procedure OUTFRAME;
+		begin
+			integer I;
 
-			'for' I := 1 'step' 1 'until' N 'do'
+			for I := 1 step 1 until N do
 				outstring (1, "+---");
 			outstring (1, "+\n")
-		'end';
+		end;
 
 		outstring (1, "SEE:\n") ;
 
-		'for' J := 1 'step' 1 'until' N 'do' 'begin'
+		for J := 1 step 1 until N do begin
 			OUTFRAME;
 			outstring (1, "|");
-			'for' I := 1 'step' 1 'until' N 'do' 'begin'
-				'if' N + 1 - J = COLUMN [I] 'then'
+			for I := 1 step 1 until N do begin
+				if N + 1 - J = COLUMN [I] then
 					outstring (1, " Q |")
-				'else'
+				else
 					outstring (1, "   |")
-			'end';
+			end;
 			outstring (1, "\n")
-		'end';
+		end;
 		OUTFRAME
-	'end';
+	end;
 
-	'procedure' SET (X);
-	'value' X;
-	'integer' X;
-	'begin'
-		'integer' Y;
-	
-		'for' Y := 1 'step' 1 'until' N 'do'
-		'begin'
-	    		'if' EMPCOL [ Y ] 'and' EMPUP [ X-Y ] 
-					'and' EMPDO [ X+Y ] 'then'
-			'begin'
+	procedure SET (X);
+	value X;
+	integer X;
+	begin
+		integer Y;
+
+		for Y := 1 step 1 until N do
+		begin
+	    		if EMPCOL [ Y ] and EMPUP [ X-Y ]
+					and EMPDO [ X+Y ] then
+			begin
 				COLUMN [ Y ] := X ;
-				EMPCOL [ Y ] := 'false' ;
-				EMPUP [ X-Y ] := 'false' ;
-				EMPDO [ X+Y ] := 'false' ;
-				'if' X = N 'then'
-					'goto' GOTONE
-				'else'
+				EMPCOL [ Y ] := false ;
+				EMPUP [ X-Y ] := false ;
+				EMPDO [ X+Y ] := false ;
+				if X = N then
+					goto GOTONE
+				else
 					SET ( X + 1 ) ;
-				EMPDO [ X+Y ] := 'true' ;
-				EMPUP [ X-Y ] := 'true' ;
-				EMPCOL [ Y ] := 'true' ;
+				EMPDO [ X+Y ] := true ;
+				EMPUP [ X-Y ] := true ;
+				EMPCOL [ Y ] := true ;
 				COLUMN [ Y ] := 0
-			'end'
-		'end'
-	'end';
+			end
+		end
+	end;
 
-	'comment'
+	comment
 		MAIN PROGRAM START
 	;
 
@@ -89,34 +89,34 @@ TRY NEXT N:
 	outinteger (1, N);
 	outstring (1, " CHESSBOARD...\n");
 
-	'for' I := 1 'step' 1 'until' N 'do'
-	'begin'
+	for I := 1 step 1 until N do
+	begin
 		 COLUMN [ I ] := 0 ;
-		 EMPCOL [ I ] := 'true'
-	'end';
+		 EMPCOL [ I ] := true
+	end;
 
-	'for' I := -N+1 'step' 1 'until' N-1 'do'
-		 EMPUP [ I ] := 'true' ;
+	for I := -N+1 step 1 until N-1 do
+		 EMPUP [ I ] := true ;
 
-	'for'  I := 2 'step' 1 'until' 2*N 'do'
-		 EMPDO [ I ] := 'true' ;
+	for  I := 2 step 1 until 2*N do
+		 EMPDO [ I ] := true ;
 
 	SET ( 1 ) ;
 
 	outstring (1, "NO SOLUTION.\n");
-	'goto' CONTN;
+	goto CONTN;
 
 GOTONE:
 	PRINT;
 
 CONTN:
-	'if' N < MAXN 'then' 'begin'
+	if N < MAXN then begin
 		N := N + 1;
-		'goto' TRY NEXT N
-	'end';
+		goto TRY NEXT N
+	end;
 
 	outstring (1, "DONE.\n")
 
-	'end'
-'end'
+	end
+end
 

@@ -15,7 +15,6 @@ begin comment These examples were described in [D.E.Knuth, J.N.Merner.
       comment The first example demonstrates usage of the procedure
          GPS to create a matrix A[i,j] = i+j;
 
-first_example:
       begin
          real i, j;
          array A[1:2,1:3];
@@ -31,7 +30,6 @@ first_example:
       comment The second example demonstrates usage of the procedure
          GPS to perform matrix multiplication;
 
-second_example:
       begin
          procedure testmatr(n, a); value n; integer n; array a;
          begin real c, d; integer i, j;
@@ -71,7 +69,7 @@ second_example:
                   q := 1 / a[i,i]; a[i,i] := 1;
                   for k := 1 step 1 until n do a[i,k] := a[i,k] * q;
                   for j := 1 step 1 until n do
-                     if i ^= j then
+                     if i ~= j then
                         begin q := a[j,i]; a[j,i] := 0;
                            for k := 1 step 1 until n do
                               a[j,k] := a[j,k] - q * a[i,k]

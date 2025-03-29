@@ -53,7 +53,7 @@ start: outstring(1,"\n\nMastermind Codebreaker\nVersion 1 or 2 ?");
 	         if temp then black:=black+1;
 	   end;
 
-	   if black ^= blacks[oldrow] then goto not_viable;
+	   if black ~= blacks[oldrow] then goto not_viable;
 	   white:=0;
 	   for col:=1,2,3 do
 	      for oldcol:=col+1 step 1 until 4 do
@@ -77,7 +77,7 @@ start: outstring(1,"\n\nMastermind Codebreaker\nVersion 1 or 2 ?");
 	                  end;
 	            end;
 	     end;
-	   if white ^= whites[oldrow]
+	   if white ~= whites[oldrow]
 	   then goto not_viable;
 	end look at each previous row;
 

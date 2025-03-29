@@ -1,122 +1,67 @@
-'begin'
-	'comment'
-		FIND A SOLUTION FOR THE `N QUEEN' PROBLEM.
-		(GOT THE ALGORITHM FROM A MODULA PROGRAM FROM
-		 MARTIN NEITZEL).
-	;
+begin
+        comment
+          -- From the NASE A60 distribution --
+                calculation of the prime numbers between 2 and 200
+        ;
 
-	'integer' N, MAXN;
+        integer NN;
 
-	MAXN := 11;		'comment' MAXIMUM SIZE;
-	N := 2;			'comment' CURRENT SIZE;
+        NN := 200;
 
-TRY NEXT N:
+        begin
+                comment first algorithm (check division in a loop) ;
 
-	'begin'
+                boolean procedure isprime (n);
+                value n;
+                integer n;
+                begin
+                        boolean procedure even (n);
+                        value n; integer n; integer i;
+                                n := 1;
+                                even := entier (n / 2) * 2 = n;
 
-	'integer' 'array' COLUMN [1 : N];
-	'boolean' 'array' EMPCOL [1 : N];
-	'boolean' 'array' EMPUP [-N+1 : N-1];
-	'boolean' 'array' EMPDO [2 : 2*N];
-	'integer' I;
+                        isprime := false;
+                        if even (n) and n ~= 2 then
+                                goto ret;
 
-	'procedure' PRINT;
-	'comment'
-		PRINT THE CURRENT SOLUTION IN A CHESSBOARD ALIKE
-		PICTURE ;
-	'begin'
-		'integer' I, J;
+                        for i := 3 step 2 until n // 2 do
+                                if entier (n / i) * i = n then
+                                        goto ret;
+                        isprime := true;
+                    ret:
 
-		'procedure' OUTFRAME;
-		'begin'
-			'integer' I;
+                end;
 
-			'for' I := 1 'step' 1 'until' N 'do'
-				outstring (1, "+---");
-			outstring (1, "+\n")
-		'end';
+                integer i;
 
-		outstring (1, "SEE:\n") ;
+                printsln ("first:");
 
-		'for' J := 1 'step' 1 'until' N 'do' 'begin'
-			OUTFRAME;
-			outstring (1, "|");
-			'for' I := 1 'step' 1 'until' N 'do' 'begin'
-				'if' N + 1 - J = COLUMN [I] 'then'
-					outstring (1, " Q |")
-				'else'
-					outstring (1, "   |")
-			'end';
-			outstring (1, "\n")
-		'end';
-		OUTFRAME
-	'end';
+                for i := 2 step 1 until NN do
+                        if isprime (i) then
+                                printnln (i);
+                printsln ("done.")
+        end;
 
-	'procedure' SET (X);
-	'value' X;
-	'integer' X;
-	'begin'
-		'integer' Y;
-	
-		'for' Y := 1 'step' 1 'until' N 'do'
-		'begin'
-	    		'if' EMPCOL [ Y ] 'and' EMPUP [ X-Y ] 
-					'and' EMPDO [ X+Y ] 'then'
-			'begin'
-				COLUMN [ Y ] := X ;
-				EMPCOL [ Y ] := 'false' ;
-				EMPUP [ X-Y ] := 'false' ;
-				EMPDO [ X+Y ] := 'false' ;
-				'if' X = N 'then'
-					'goto' GOTONE
-				'else'
-					SET ( X + 1 ) ;
-				EMPDO [ X+Y ] := 'true' ;
-				EMPUP [ X-Y ] := 'true' ;
-				EMPCOL [ Y ] := 'true' ;
-				COLUMN [ Y ] := 0
-			'end'
-		'end'
-	'end';
+        begin
+                comment second algorithm (sieve) ;
 
-	'comment'
-		MAIN PROGRAM START
-	;
 
-	outstring (1, "LOOKING ONTO A ");
-	outinteger (1, N);
-	outstring (1, " X ");
-	outinteger (1, N);
-	outstring (1, " CHESSBOARD...\n");
+                boolean array arr [2 : NN];
+                integer i, j;
 
-	'for' I := 1 'step' 1 'until' N 'do'
-	'begin'
-		 COLUMN [ I ] := 0 ;
-		 EMPCOL [ I ] := 'true'
-	'end';
+                printsln ("second:");
 
-	'for' I := -N+1 'step' 1 'until' N-1 'do'
-		 EMPUP [ I ] := 'true' ;
+                for i := 2 step 1 until NN do
+                        arr [i] := true;
 
-	'for'  I := 2 'step' 1 'until' 2*N 'do'
-		 EMPDO [ I ] := 'true' ;
+                for i := 2 step 1 until NN // 2 do
+                        for j := 2 * i step i until NN do
+                                arr [j] := false;
 
-	SET ( 1 ) ;
+                for i := 2 step 1 until NN do
+                        if arr [i] then
+                                printnln (i);
+                printsln ("done.")
 
-	outstring (1, "NO SOLUTION.\n");
-	'goto' CONTN;
-
-GOTONE:
-	PRINT;
-
-CONTN:
-	'if' N < MAXN 'then' 'begin'
-		N := N + 1;
-		'goto' TRY NEXT N
-	'end';
-
-	outstring (1, "DONE.\n")
-
-	'end'
-'end'
-
+        end
+end

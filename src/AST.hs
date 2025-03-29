@@ -6,7 +6,6 @@ module AST
   , Expr(..)
   , Stmt(..)
   , BlockStmt(..)
-  , ArrayStmt(..)
   , CallStmt(..)
   , AssignStmt(..)
   , IfStmt(..)
@@ -112,7 +111,6 @@ data Expr
 data Stmt
   = NilStmt
   | BlockStmt BlockStmt
-  | ArrayStmt ArrayStmt
   | CallStmt Expr
   | LabelStmt Symbol Stmt
   | VarStmt Var
@@ -129,16 +127,6 @@ data BlockStmt = BlockStmt_
   { decs :: [Dec]
   , body :: Stmt
   , position :: Position
-  }
-  deriving (Show, Read, Eq, Generic)
-
-
-data ArrayStmt = ArrayStmt_
-  { typ           :: Symbol
-  , size          :: Expr
-  , initValue     :: Expr
-  , positionBegin :: Position
-  , positionEnd   :: Position
   }
   deriving (Show, Read, Eq, Generic)
 

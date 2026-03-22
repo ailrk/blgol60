@@ -2,7 +2,7 @@
   description = "blgol60";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/8f3cf34b8d2e2caf4ae5ee1d1fddc1baab4c5964";
+    nixpkgs.url = "github:NixOS/nixpkgs/48652e9d5aea46e555b3df87354280d4f29cd3a3";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
